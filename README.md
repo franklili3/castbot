@@ -118,6 +118,24 @@ Copy `news-pipeline/config.example.mjs` to `news-pipeline/config.mjs` and custom
 - LLM endpoint
 - Publish platforms
 
+## Optional Xquik Source Context
+
+SquareAgent can also use recent X/Twitter conversations as source context before
+generation. The `examples/xquik-source-context.mjs` script fetches tweet search
+results from Xquik and writes a local JSON file that can be reviewed or folded
+into prompts.
+
+```bash
+XQUIK_API_KEY=your_key \
+XQUIK_TWEET_QUERY="bitcoin OR crypto OR web3" \
+node examples/xquik-source-context.mjs
+```
+
+The script calls `GET https://xquik.com/api/v1/x/tweets/search` with the
+`X-API-Key` header and saves normalized rows to `data/xquik-sources.json`.
+Keep this as upstream evidence for drafting and review; keep SquareAgent's
+configured connectors responsible for publishing.
+
 ## License
 
 MIT — See [LICENSE](LICENSE)
