@@ -1,0 +1,24 @@
+[Unit]
+Description=Square Agent — Publisher (API-only)
+After=network-online.target square-agent-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/square-agent/square-agent
+# publisher 用 bot/.env 里的 AGENT_TOKEN，主 .env 里的 API_KEY / BINANCE_SQUARE_OPENAPI_KEY
+EnvironmentFile=%h/projects/square-agent/square-agent/.env
+EnvironmentFile=%h/projects/square-agent/square-agent/bot/.env
+# SERVER_URL 指向本机 server，避免落到默认 https://api.square-agent.com（不存在）
+Environment=SERVER_URL=http://localhost:5577
+ExecStart=/usr/bin/node bot/public/agent.mjs
+Restart=on-failure
+RestartSec=5
+MemoryMax=128M
+MemoryHigh=96M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=square-agent-publisher
+
+[Install]
+WantedBy=default.target

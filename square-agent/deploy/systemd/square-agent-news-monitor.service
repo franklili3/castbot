@@ -1,0 +1,20 @@
+[Unit]
+Description=Square Agent — News Monitor (RSS + Binance price + funding)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/square-agent/square-agent
+EnvironmentFile=%h/projects/square-agent/square-agent/.env
+ExecStart=/usr/bin/node news-pipeline/news-monitor.mjs
+Restart=on-failure
+RestartSec=10
+MemoryMax=128M
+MemoryHigh=96M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=square-agent-news-monitor
+
+[Install]
+WantedBy=default.target

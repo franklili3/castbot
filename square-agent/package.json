@@ -1,0 +1,17 @@
+{
+  "name": "square-agent",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Crypto social media automation: RSS → LLM → publish to Binance Square, Telegram. (production instance)",
+  "type": "module",
+  "scripts": {
+    "start": "node news-pipeline/pipeline.mjs --watch",
+    "once": "node news-pipeline/pipeline.mjs",
+    "monitor": "node news-pipeline/news-monitor.mjs",
+    "mcp": "node src/mcp-server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

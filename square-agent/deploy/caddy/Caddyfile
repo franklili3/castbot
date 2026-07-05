@@ -1,0 +1,11 @@
+# Caddyfile — api.square-agent.com HTTPS 反向代理
+# 部署位置: /etc/caddy/Caddyfile
+# 用法:
+#   sudo cp deploy/caddy/Caddyfile /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+#
+# Caddy 自动签发并续期 Let's Encrypt 证书，无需手动维护。
+
+api.square-agent.com {
+	reverse_proxy localhost:5577
+}

@@ -1,0 +1,144 @@
+{
+  "version": "2026-06-04",
+  "updated_at": "2026-06-04T23:08:00+08:00",
+  "description": "Binance Square UI操作配置 - 币安改版时只需更新此文件",
+
+  "urls": {
+    "square_home": "https://www.binance.com/zh-CN/square",
+    "creator_center": "https://www.binance.com/zh-CN/square/creator-center/home",
+    "followers": "https://www.binance.com/zh-CN/square/profile/Lilibtc/followers"
+  },
+
+  "chrome": {
+    "screen_y": 30,
+    "chrome_ui_height": 121,
+    "viewport_to_global": "screen_y + chrome_ui_height + viewport_y",
+    "app_name": "Google Chrome"
+  },
+
+  "selectors": {
+    "editor": ".ProseMirror",
+    "editor_wrapper": ".short-editor-content",
+    "poll_input": "input",
+    "poll_input_placeholder_contains": "选项",
+    "more_button_icon": ".icon-box",
+    "toolbar_container": ".editor-toolbar-container",
+    "publish_button_text": "发文"
+  },
+
+  "delays": {
+    "page_load": 5000,
+    "editor_expand": 1000,
+    "after_focus": 500,
+    "after_paste": 2000,
+    "after_type": 1000,
+    "after_menu_click": 3000,
+    "after_poll_create": 2000,
+    "after_option_fill": 1000,
+    "after_topic_type": 2000,
+    "after_topic_enter": 500,
+    "after_scroll": 500,
+    "after_publish_click": 5000,
+    "poll_interval": 30000
+  },
+
+  "actions": {
+    "expand_editor": {
+      "method": "peekaboo_click",
+      "coords": [500, 170],
+      "coord_space": "window_relative"
+    },
+    "focus_editor": {
+      "method": "js",
+      "code": "var pm=document.querySelector('.ProseMirror');if(!pm)return 'no_pm';pm.style.minHeight='300px';pm.focus();return 'ok';"
+    },
+    "input_content": {
+      "method": "peekaboo_paste"
+    },
+    "scroll_to_top": {
+      "method": "js",
+      "code": "window.scrollTo(0,0)"
+    },
+    "click_more_button": {
+      "method": "peekaboo_click",
+      "global_coords": [531, 590],
+      "note": "toolbar必须在y=423默认位置，内容不能超过3行"
+    },
+    "click_create_poll": {
+      "method": "js_click_by_text",
+      "text": "创建投票",
+      "y_range": [400, 700]
+    },
+    "click_poll_option": {
+      "method": "peekaboo_click_poll_option",
+      "base_viewport_y": 429,
+      "y_step": 52,
+      "viewport_x": 480,
+      "note": "选项1 viewport_y=429, 选项2 viewport_y=481(429+52)"
+    },
+    "type_poll_option": {
+      "method": "peekaboo_type",
+      "note": "必须先用click_poll_option点击对应input获得焦点"
+    },
+    "verify_poll_inputs": {
+      "method": "js_find_inputs",
+      "y_range": [400, 530],
+      "min_width": 100
+    },
+    "find_publish_button": {
+      "method": "js_find_button",
+      "text": "发文",
+      "x_range": [800, 950],
+      "width_range": [50, 100],
+      "opacity_check": true,
+      "note": "返回viewport y坐标，用于计算global坐标"
+    },
+    "click_publish": {
+      "method": "peekaboo_click_publish",
+      "viewport_x": 903,
+      "y_offset_center": 16,
+      "note": "global_y = chrome.screen_y + chrome.chrome_ui_height + btn_viewport_y + y_offset_center"
+    },
+    "find_topic_dropdown": {
+      "method": "js_find_hashtag",
+      "data_type": "hashtag"
+    },
+    "check_active_element": {
+      "method": "js",
+      "code": "return document.activeElement.tagName+' '+(document.activeElement.placeholder||'')"
+    }
+  },
+
+  "constraints": {
+    "poll_max_content_lines": 3,
+    "poll_min_options": 2,
+    "poll_max_options": 2,
+    "topic_input_wait": 2000,
+    "editor_max_safe_content_height": 350,
+    "toolbar_default_y": 423,
+    "note": "编辑器内容超过3行时toolbar被推到y>600，更多按钮菜单无法弹出"
+  },
+
+  "text_mappings": {
+    "publish_button": "发文",
+    "more_menu_items": {
+      "live_preview": "添加直播预告",
+      "copy_trading": "跟单交易",
+      "schedule": "定时发布",
+      "create_poll": "创建投票",
+      "add_link": "添加链接"
+    },
+    "sentiment_buttons": {
+      "bullish": {
+        "class": "css-pulslw",
+        "viewport_x": 778,
+        "note": "未完全验证"
+      },
+      "bearish": {
+        "class": "css-1dvl0pt",
+        "viewport_x": 814,
+        "note": "未完全验证"
+      }
+    }
+  }
+}

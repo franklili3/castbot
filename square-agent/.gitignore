@@ -1,0 +1,20 @@
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# ========== Runtime data (now lives in ~/.square-agent/) ==========
+bot/data/
+news-pipeline/data/
+server/server.log
+server/data.db
+server/data.db-shm
+server/data.db-wal
+bot/bot.log
+analytics/*.log
+
+# Keep ML reference data in repo (anchored to repo root to avoid un-ignoring bot/data/)
+!/data/
+!/data/btc-*.json
+!/data/eth-*.json

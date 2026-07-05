@@ -1,0 +1,15 @@
+{
+  "name": "square-agent-server",
+  "version": "1.0.0",
+  "description": "Cloud API server for Binance Square Agent SaaS",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.0"
+  }
+}

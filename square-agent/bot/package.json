@@ -1,0 +1,30 @@
+{
+  "name": "square-agent-bot",
+  "version": "0.1.0",
+  "description": "币安广场自动运营 Telegram Bot + API Server",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"tsx watch src/api.ts\" \"tsx watch src/bot.ts\"",
+    "start": "concurrently \"tsx src/api.ts\" \"tsx src/bot.ts\"",
+    "bot": "tsx src/bot.ts",
+    "api": "tsx src/api.ts",
+    "agent": "tsx src/agent.ts"
+  },
+  "dependencies": {
+    "grammy": "^1.36.1",
+    "better-sqlite3": "^11.9.1",
+    "dotenv": "^16.5.0",
+    "undici": "^8.3.0",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "https-proxy-agent": "^9.0.0",
+    "concurrently": "^9.1.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^22.15.0",
+    "@types/cors": "^2.8.17",
+    "typescript": "^5.8.3"
+  }
+}

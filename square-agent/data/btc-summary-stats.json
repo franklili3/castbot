@@ -1,0 +1,298 @@
+{
+  "coin": "BTCUSDT",
+  "generated_at": "2026-06-30 11:21:39",
+  "method": "LogReg + TF-IDF(1-2gram,top500) + FinBERT probs + [ppos,pneg,pneu,n_news,pos_neg_ratio]",
+  "walk_forward_folds": [
+    "2021→2022",
+    "2022→2023",
+    "2023→2024",
+    "2024→2025"
+  ],
+  "cost_model": {
+    "taker_single": 0.05,
+    "taker_double": 0.1,
+    "funding": "real historical"
+  },
+  "daily_freq_sharpe": "构建完整日历序列，非交易日填 0，年化 √365",
+  "best_config": {
+    "holding": "12h",
+    "threshold": 0.1,
+    "sharpe": 2.2799414925702712,
+    "cumulative_pct": 186.0665230651059,
+    "n_trades": 503,
+    "n_observations": 1152,
+    "bootstrap_ci_95": [
+      1.257083288903252,
+      3.283646051467933
+    ],
+    "p_value_vs_bh": 3.975793416777229e-05
+  },
+  "threshold_sensitivity": [
+    {
+      "threshold": 0,
+      "n_trades": 1152,
+      "sharpe": 2.012501222442791,
+      "cumulative_pct": 223.40579714876793,
+      "alpha_annualized_pct": 69.6346277495659,
+      "p_value": 0.00042253697933691825
+    },
+    {
+      "threshold": 0.05,
+      "n_trades": 802,
+      "sharpe": 2.0979048036039876,
+      "cumulative_pct": 204.08856259842787,
+      "alpha_annualized_pct": 64.18061707949953,
+      "p_value": 0.00021619703420205916
+    },
+    {
+      "threshold": 0.1,
+      "n_trades": 503,
+      "sharpe": 2.2799414925702712,
+      "cumulative_pct": 186.0665230651059,
+      "alpha_annualized_pct": 59.70185390849285,
+      "p_value": 3.975793416777229e-05
+    },
+    {
+      "threshold": 0.15,
+      "n_trades": 308,
+      "sharpe": 1.9035438016315163,
+      "cumulative_pct": 135.21539935783144,
+      "alpha_annualized_pct": 43.85428958703998,
+      "p_value": 0.0005025644802403306
+    },
+    {
+      "threshold": 0.2,
+      "n_trades": 181,
+      "sharpe": 1.3037723251377515,
+      "cumulative_pct": 74.9123265364633,
+      "alpha_annualized_pct": 25.005507107571752,
+      "p_value": 0.013401076846080606
+    }
+  ],
+  "per_fold": [
+    {
+      "fold": "2021→2022",
+      "train_acc": 76.12612612612612,
+      "n_test": 254,
+      "n_trades": 122,
+      "sharpe": 2.5019217973000063,
+      "cumulative_pct": 60.92237321692961
+    },
+    {
+      "fold": "2022→2023",
+      "train_acc": 81.49606299212599,
+      "n_test": 195,
+      "n_trades": 24,
+      "sharpe": 2.0386053427027284,
+      "cumulative_pct": 10.538366674322823
+    },
+    {
+      "fold": "2023→2024",
+      "train_acc": 74.35897435897436,
+      "n_test": 366,
+      "n_trades": 221,
+      "sharpe": 1.6372932340001516,
+      "cumulative_pct": 44.38920117340801
+    },
+    {
+      "fold": "2024→2025",
+      "train_acc": 72.1311475409836,
+      "n_test": 337,
+      "n_trades": 136,
+      "sharpe": 3.352252903601331,
+      "cumulative_pct": 70.2165820004455
+    }
+  ],
+  "monthly_2025": [
+    {
+      "month": "2025-01",
+      "n_trades": 15,
+      "sharpe": 3.2513013065387053,
+      "cumulative_pct": 6.8673620043189825
+    },
+    {
+      "month": "2025-02",
+      "n_trades": 10,
+      "sharpe": 4.863912141164712,
+      "cumulative_pct": 10.600209228489575
+    },
+    {
+      "month": "2025-03",
+      "n_trades": 16,
+      "sharpe": 0.5214119399282315,
+      "cumulative_pct": 1.3050320659492478
+    },
+    {
+      "month": "2025-04",
+      "n_trades": 14,
+      "sharpe": 7.483996123455572,
+      "cumulative_pct": 17.218629959596708
+    },
+    {
+      "month": "2025-05",
+      "n_trades": 14,
+      "sharpe": 0.3690806357375258,
+      "cumulative_pct": 0.5600156674812949
+    },
+    {
+      "month": "2025-06",
+      "n_trades": 6,
+      "sharpe": 1.0494462685541752,
+      "cumulative_pct": 0.6697395716636163
+    },
+    {
+      "month": "2025-07",
+      "n_trades": 7,
+      "sharpe": 3.1981936965390347,
+      "cumulative_pct": 4.536101116995002
+    },
+    {
+      "month": "2025-08",
+      "n_trades": 14,
+      "sharpe": 3.113310655485513,
+      "cumulative_pct": 4.915457058999273
+    },
+    {
+      "month": "2025-09",
+      "n_trades": 9,
+      "sharpe": -5.034225291500164,
+      "cumulative_pct": -5.788260689002468
+    },
+    {
+      "month": "2025-10",
+      "n_trades": 11,
+      "sharpe": 4.935939162154257,
+      "cumulative_pct": 8.756597732250402
+    },
+    {
+      "month": "2025-11",
+      "n_trades": 18,
+      "sharpe": 6.321563002511865,
+      "cumulative_pct": 15.155286210615095
+    },
+    {
+      "month": "2025-12",
+      "n_trades": 2,
+      "sharpe": 22.042574572845886,
+      "cumulative_pct": 5.420412073088782
+    }
+  ],
+  "holding_comparison_at_thr_0_10": [
+    {
+      "holding_hours": 1,
+      "sharpe": -0.3048863752505245,
+      "sharpe_vs_bh": -0.14275009099089908,
+      "bh_sharpe": -0.1621362842596254,
+      "cumulative_pct": -10.009617875821135,
+      "alpha_annualized_pct": -2.367573180868209,
+      "p_value": 0.6456961718711056
+    },
+    {
+      "holding_hours": 2,
+      "sharpe": -0.1962405309394135,
+      "sharpe_vs_bh": 0.1813071336873394,
+      "bh_sharpe": -0.3775476646267529,
+      "cumulative_pct": -7.945408257748995,
+      "alpha_annualized_pct": -0.6747910537362567,
+      "p_value": 0.9195618953779625
+    },
+    {
+      "holding_hours": 4,
+      "sharpe": 0.5803772816105836,
+      "sharpe_vs_bh": 0.5741103048679906,
+      "bh_sharpe": 0.006266976742592956,
+      "cumulative_pct": 19.12092957148868,
+      "alpha_annualized_pct": 6.0574347107500355,
+      "p_value": 0.30274293581757306
+    },
+    {
+      "holding_hours": 6,
+      "sharpe": 1.1129474609148158,
+      "sharpe_vs_bh": 0.751415350630092,
+      "bh_sharpe": 0.3615321102847238,
+      "cumulative_pct": 53.88934647457125,
+      "alpha_annualized_pct": 16.703482657300604,
+      "p_value": 0.052693626595611054
+    },
+    {
+      "holding_hours": 8,
+      "sharpe": 1.6174013209686455,
+      "sharpe_vs_bh": 1.349047629728565,
+      "bh_sharpe": 0.2683536912400807,
+      "cumulative_pct": 96.72384468620125,
+      "alpha_annualized_pct": 29.95397141750453,
+      "p_value": 0.004605692881218815
+    },
+    {
+      "holding_hours": 12,
+      "sharpe": 2.2799414925702712,
+      "sharpe_vs_bh": 1.8600872676389868,
+      "bh_sharpe": 0.4198542249312845,
+      "cumulative_pct": 186.0665230651059,
+      "alpha_annualized_pct": 59.70185390849285,
+      "p_value": 3.975793416777229e-05
+    },
+    {
+      "holding_hours": 24,
+      "sharpe": 2.0092949801647375,
+      "sharpe_vs_bh": 1.3940746763359755,
+      "bh_sharpe": 0.6152203038287621,
+      "cumulative_pct": 169.40129254228054,
+      "alpha_annualized_pct": 59.96972463119645,
+      "p_value": 1.6048274740443347e-05
+    },
+    {
+      "holding_hours": 48,
+      "sharpe": 1.4557951100586193,
+      "sharpe_vs_bh": 0.5488969043589556,
+      "bh_sharpe": 0.9068982056996637,
+      "cumulative_pct": 211.97108754950295,
+      "alpha_annualized_pct": 69.38146442628694,
+      "p_value": 0.007553255701987283
+    },
+    {
+      "holding_hours": 72,
+      "sharpe": 1.5482084685895159,
+      "sharpe_vs_bh": 0.6018334287950351,
+      "bh_sharpe": 0.9463750397944808,
+      "cumulative_pct": 318.2815976171643,
+      "alpha_annualized_pct": 84.67576971621637,
+      "p_value": 0.01687988028323173
+    },
+    {
+      "holding_hours": 96,
+      "sharpe": 1.6297539785722677,
+      "sharpe_vs_bh": 0.5029236836125934,
+      "bh_sharpe": 1.1268302949596742,
+      "cumulative_pct": 400.6001923850499,
+      "alpha_annualized_pct": 119.36441946608608,
+      "p_value": 0.006389496928112193
+    }
+  ],
+  "bonferroni": {
+    "total_tests": 400,
+    "alpha": 0.000125,
+    "btc_passing_configs": [
+      {
+        "holding": "12h",
+        "thr": 0.1,
+        "p": 4.1e-05
+      },
+      {
+        "holding": "24h",
+        "thr": 0.15,
+        "p": 3.5e-05
+      },
+      {
+        "holding": "12h",
+        "thr": 0.05,
+        "p": 0.000211
+      },
+      {
+        "holding": "24h",
+        "thr": 0.1,
+        "p": 2e-05
+      }
+    ]
+  }
+}

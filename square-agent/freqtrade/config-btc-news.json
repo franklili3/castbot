@@ -1,0 +1,57 @@
+{
+    "trading_mode": "futures",
+    "margin_mode": "isolated",
+    "max_open_trades": 1,
+    "stake_currency": "USDT",
+    "stake_amount": "unlimited",
+    "tradable_balance_ratio": 0.99,
+    "dry_run_wallet": 10000,
+    "fee": 0.001,
+
+    "timeframe": "1h",
+    "startup_candle_count": 50,
+
+    "timerange": "20220101-20251203",
+
+    "exchange": {
+        "name": "binance",
+        "key": "",
+        "secret": "",
+        "ccxt_config": {},
+        "ccxt_async_config": {},
+        "pair_whitelist": ["BTC/USDT:USDT"],
+        "pair_blacklist": []
+    },
+
+    "pairlists": {
+        "method": "StaticPairList",
+        "allow_inactive": true
+    },
+
+    "strategy": "BtcNewsSignalReplay",
+
+    "strategy_path": "strategies/BtcNewsSignalReplay.py",
+
+    "datadir": "data/binance",
+
+    "internal": {
+        "process_throttle_secs": 5
+    },
+
+    "bot_name": "btc-news-replay",
+    "initial_state": "running",
+    "force_entry_enable": false,
+    "disable_dataframe_checks": true,
+    "unfilledtimeout": {
+        "entry": 10,
+        "exit": 10,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+    },
+    "order_types": {
+        "entry": "market",
+        "exit": "market",
+        "stoploss": "market",
+        "stoploss_on_exchange": false
+    }
+}

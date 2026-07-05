@@ -1,0 +1,21 @@
+[Unit]
+Description=Square Agent — API Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/square-agent/square-agent
+EnvironmentFile=%h/projects/square-agent/square-agent/.env
+ExecStart=/usr/bin/node server/src/server.mjs
+Restart=on-failure
+RestartSec=5
+# 给 Node 进程一个软内存上限，OOM 时优先重启而非杀整机
+MemoryMax=256M
+MemoryHigh=200M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=square-agent-server
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,26 @@
+[Unit]
+Description=Square Agent — Telegram Bot + Bot API (tsx via concurrently)
+After=network-online.target
+Wants=network-online.target
+# server 依赖 bot 的 :3100 API；想让 server 等 bot 起来再启，可在 server.service 加 After=本单元
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/square-agent/square-agent/bot
+EnvironmentFile=%h/projects/square-agent/square-agent/bot/.env
+# DATABASE_PATH 不在 .env 中设置；schema.ts 的 fallback 会解析到 ~/.square-agent/bot/square-agent.db
+# 让 concurrently 内部 spawn 的 tsx 能被解析
+Environment=PATH=/usr/bin:/usr/local/bin:%h/projects/square-agent/square-agent/bot/node_modules/.bin
+# -k: 任一进程退出 → 全部退出 → systemd 整体重启（避免半瘫痪状态）
+ExecStart=%h/projects/square-agent/square-agent/bot/node_modules/.bin/concurrently -k --names api,bot "tsx src/api.ts" "tsx src/bot.ts"
+Restart=on-failure
+RestartSec=10
+KillMode=control-group
+MemoryMax=512M
+MemoryHigh=400M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=square-agent-bot
+
+[Install]
+WantedBy=default.target

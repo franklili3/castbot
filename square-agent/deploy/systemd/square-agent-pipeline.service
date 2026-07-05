@@ -1,0 +1,20 @@
+[Unit]
+Description=Square Agent — News Pipeline (watch)
+After=network-online.target square-agent-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/square-agent/square-agent
+EnvironmentFile=%h/projects/square-agent/square-agent/.env
+ExecStart=/usr/bin/node news-pipeline/pipeline.mjs --watch
+Restart=on-failure
+RestartSec=10
+MemoryMax=256M
+MemoryHigh=200M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=square-agent-pipeline
+
+[Install]
+WantedBy=default.target

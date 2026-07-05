@@ -1,0 +1,109 @@
+# SquareAgent — 一键部署
+#
+# 用法：
+#   docker-compose up -d
+#
+# 需要的环境变量（在 .env 文件中配置）：
+#   GLM_API_KEY=           智谱 API Key
+#   NEWS_ZHIPU_MODEL=      智谱模型 ID（默认 glm-4-flash-250414）
+#   NEWS_ZHIPU_BASE_URL=   智谱 API 端点（默认编码套餐 coding/paas/v4）
+#   BINANCE_SQUARE_OPENAPI_KEY= 币安广场 API Key
+#   TELEGRAM_BOT_TOKEN=    Telegram Bot Token
+#   TELEGRAM_CHANNEL_ID=   Telegram Channel ID (可选)
+#
+# 所有运行时数据统一持久化到命名 volume `square-agent-data`，
+# 容器内挂载到 /app/.square-agent（即 SQUARE_AGENT_DATA_DIR）。
+
+services:
+  # ============ API Server ============
+  server:
+    build: .
+    container_name: sa-server
+    ports:
+      - "5577:5577"
+    volumes:
+      - square-agent-data:/app/.square-agent
+      - ./server/src:/app/server/src        # 热重载
+    environment:
+      - NODE_ENV=production
+      - PORT=5577
+      - BOT_API_URL=http://bot:3000
+      - BOT_API_KEY=${BOT_API_KEY:-binsquare-dev-key-2026}
+      - SQUARE_AGENT_DATA_DIR=/app/.square-agent
+      - SQUARE_AGENT_REPO_DIR=/app/square-agent
+    restart: unless-stopped
+    depends_on:
+      - bot
+
+  # ============ News Pipeline ============
+  pipeline:
+    build: .
+    container_name: sa-pipeline
+    command: node square-agent/news-pipeline/pipeline.mjs --watch
+    volumes:
+      - square-agent-data:/app/.square-agent
+      - ./news-pipeline:/app/news-pipeline
+      - ./src:/app/src
+      - ./data:/app/data                    # 只读 ML 参考数据
+    environment:
+      - NODE_ENV=production
+      - GLM_API_KEY=${GLM_API_KEY}
+      - NEWS_ZHIPU_MODEL=${NEWS_ZHIPU_MODEL:-glm-4-flash-250414}
+      - NEWS_ZHIPU_BASE_URL=${NEWS_ZHIPU_BASE_URL:-https://open.bigmodel.cn/api/coding/paas/v4}
+      - RSS_PROXY=${RSS_PROXY:-}
+      - SQUARE_AGENT_DATA_DIR=/app/.square-agent
+      - SQUARE_AGENT_REPO_DIR=/app
+    restart: unless-stopped
+
+  # ============ Publisher ============
+  publisher:
+    build: .
+    container_name: sa-publisher
+    command: node .square-agent/publisher/agent.mjs
+    volumes:
+      - square-agent-data:/app/.square-agent
+    environment:
+      - NODE_ENV=production
+      - SERVER_URL=http://server:5577
+      - BINANCE_SQUARE_OPENAPI_KEY=${BINANCE_SQUARE_OPENAPI_KEY}
+      - SQUARE_AGENT_DATA_DIR=/app/.square-agent
+      - SQUARE_AGENT_PUBLISHER_LOG_DIR=/app/.square-agent/publisher/logs
+    restart: unless-stopped
+    depends_on:
+      - server
+
+  # ============ Telegram Bot (可选) ============
+  bot:
+    build: ./bot
+    container_name: sa-bot
+    volumes:
+      - square-agent-data:/app/.square-agent
+      - ./bot/src:/app/src
+    environment:
+      - NODE_ENV=production
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - BINANCE_SQUARE_OPENAPI_KEY=${BINANCE_SQUARE_OPENAPI_KEY}
+      - SERVER_URL=http://server:5577
+      - DATABASE_PATH=/app/.square-agent/bot/square-agent.db
+      - SQUARE_AGENT_DATA_DIR=/app/.square-agent
+    restart: unless-stopped
+    profiles: ["full"]  # docker-compose --profile full up
+
+  # ============ MCP Server (可选) ============
+  mcp:
+    build: .
+    container_name: sa-mcp
+    command: node square-agent/src/mcp-server.mjs
+    volumes:
+      - square-agent-data:/app/.square-agent
+      - ./src:/app/src
+    environment:
+      - SQUARE_SERVER=http://server:5577
+      - SQUARE_AGENT_DATA_DIR=/app/.square-agent
+      - SQUARE_AGENT_REPO_DIR=/app
+    stdin_open: true
+    restart: unless-stopped
+    profiles: ["mcp"]  # docker-compose --profile mcp up
+
+volumes:
+  square-agent-data:

@@ -1,0 +1,194 @@
+==========================================================================================
+【监督学习：Lamon CS229 方法重做】
+==========================================================================================
+数据: 2025 cryptopanic (27269 条关联到主流币的新闻)
+特征: FinBERT [ppos, pneg, pneu] 每日均值 + n_news + pos_neg_ratio
+标签: 次日 close vs 当日 close (1=涨, 0=跌)
+切分: 时间序列 60% train / 20% val / 20% test
+
+
+======================================================================
+[BTC] n_train=202, n_val=67, n_test=68
+======================================================================
+  Val [LogisticReg] acc=50.7%
+  Val [LinearSVC] acc=53.7%
+  Val [BernoulliNB] acc=44.8%
+
+  最佳分类器: LinearSVC (val acc=53.7%)
+
+  [BTC | TEST] n=68
+    Accuracy: 44.1%  (base rate up=48.5%)
+    Confusion Matrix:
+                  Pred. Down  Pred. Up
+    Actual Up             26         31
+                  Pred. Down  Pred. Up
+    Actual Down            4         31  (TN=4, FP=31)
+    Actual Up              7         26  (FN=7, TP=26)
+    Lamon 幅度加权:
+      平均涨幅（全部正确 vs 全部错误）: +1.10% vs -1.28%
+      实际涨 — 正确预测 vs 错误: +1.59% vs +2.35%
+      实际跌 — 正确预测 vs 错误: -2.05% vs -2.10%
+  多数类基线: 51.5%
+  交易回测 (累积 %):
+    只做多 (buy & hold): -15.47%
+    预测涨才做多: -23.75%
+    涨做多/跌做空: -32.03%
+
+======================================================================
+[ETH] n_train=200, n_val=66, n_test=68
+======================================================================
+  Val [LogisticReg] acc=54.5%
+  Val [LinearSVC] acc=57.6%
+  Val [BernoulliNB] acc=42.4%
+
+  最佳分类器: LinearSVC (val acc=57.6%)
+
+  [ETH | TEST] n=68
+    Accuracy: 42.6%  (base rate up=48.5%)
+    Confusion Matrix:
+                  Pred. Down  Pred. Up
+    Actual Up             14         20
+                  Pred. Down  Pred. Up
+    Actual Down           15         20  (TN=15, FP=20)
+    Actual Up             19         14  (FN=19, TP=14)
+    Lamon 幅度加权:
+      平均涨幅（全部正确 vs 全部错误）: -0.37% vs -0.24%
+      实际涨 — 正确预测 vs 错误: +2.91% vs +2.56%
+      实际跌 — 正确预测 vs 错误: -3.42% vs -2.89%
+  多数类基线: 51.5%
+  交易回测 (累积 %):
+    只做多 (buy & hold): -19.79%
+    预测涨才做多: -17.13%
+    涨做多/跌做空: -14.47%
+
+======================================================================
+[SOL] n_train=193, n_val=64, n_test=66
+======================================================================
+  Val [LogisticReg] acc=53.1%
+  Val [LinearSVC] acc=53.1%
+  Val [BernoulliNB] acc=42.2%
+
+  最佳分类器: LogisticReg (val acc=53.1%)
+
+  [SOL | TEST] n=66
+    Accuracy: 50.0%  (base rate up=42.4%)
+    Confusion Matrix:
+                  Pred. Down  Pred. Up
+    Actual Up             14         19
+                  Pred. Down  Pred. Up
+    Actual Down           19         19  (TN=19, FP=19)
+    Actual Up             14         14  (FN=14, TP=14)
+    Lamon 幅度加权:
+      平均涨幅（全部正确 vs 全部错误）: -0.39% vs -0.69%
+      实际涨 — 正确预测 vs 错误: +3.42% vs +3.74%
+      实际跌 — 正确预测 vs 错误: -3.19% vs -3.95%
+  多数类基线: 57.6%
+  交易回测 (累积 %):
+    只做多 (buy & hold): -35.49%
+    预测涨才做多: -27.17%
+    涨做多/跌做空: -18.85%
+
+======================================================================
+[XRP] n_train=196, n_val=65, n_test=66
+======================================================================
+  Val [LogisticReg] acc=44.6%
+  Val [LinearSVC] acc=46.2%
+  Val [BernoulliNB] acc=44.6%
+
+  最佳分类器: LinearSVC (val acc=46.2%)
+
+  [XRP | TEST] n=66
+    Accuracy: 43.9%  (base rate up=43.9%)
+    Confusion Matrix:
+                  Pred. Down  Pred. Up
+    Actual Up             10         18
+                  Pred. Down  Pred. Up
+    Actual Down           19         18  (TN=19, FP=18)
+    Actual Up             19         10  (FN=19, TP=10)
+    Lamon 幅度加权:
+      平均涨幅（全部正确 vs 全部错误）: -0.83% vs -0.06%
+      实际涨 — 正确预测 vs 错误: +3.95% vs +2.62%
+      实际跌 — 正确预测 vs 错误: -3.34% vs -2.88%
+  多数类基线: 56.1%
+  交易回测 (累积 %):
+    只做多 (buy & hold): -26.29%
+    预测涨才做多: -12.43%
+    涨做多/跌做空: +1.42%
+
+======================================================================
+[DOGE] n_train=169, n_val=56, n_test=58
+======================================================================
+  Val [LogisticReg] acc=41.1%
+  Val [LinearSVC] acc=39.3%
+  Val [BernoulliNB] acc=46.4%
+
+  最佳分类器: BernoulliNB (val acc=46.4%)
+
+  [DOGE | TEST] n=58
+    Accuracy: 60.3%  (base rate up=39.7%)
+    Confusion Matrix:
+                  Pred. Down  Pred. Up
+    Actual Up              9          9
+                  Pred. Down  Pred. Up
+    Actual Down           26          9  (TN=26, FP=9)
+    Actual Up             14          9  (FN=14, TP=9)
+    Lamon 幅度加权:
+      平均涨幅（全部正确 vs 全部错误）: -1.39% vs -0.03%
+      实际涨 — 正确预测 vs 错误: +4.55% vs +3.24%
+      实际跌 — 正确预测 vs 错误: -3.45% vs -5.12%
+  多数类基线: 60.3%
+  交易回测 (累积 %):
+    只做多 (buy & hold): -49.45%
+    预测涨才做多: -5.15%
+    涨做多/跌做空: +39.16%
+
+======================================================================
+[ADA] n_train=174, n_val=58, n_test=59
+======================================================================
+  Val [LogisticReg] acc=43.1%
+  Val [LinearSVC] acc=43.1%
+  Val [BernoulliNB] acc=51.7%
+
+  最佳分类器: BernoulliNB (val acc=51.7%)
+
+  [ADA | TEST] n=59
+    Accuracy: 59.3%  (base rate up=37.3%)
+    Confusion Matrix:
+                  Pred. Down  Pred. Up
+    Actual Up              4          6
+                  Pred. Down  Pred. Up
+    Actual Down           31          6  (TN=31, FP=6)
+    Actual Up             18          4  (FN=18, TP=4)
+    Lamon 幅度加权:
+      平均涨幅（全部正确 vs 全部错误）: -2.65% vs +1.36%
+      实际涨 — 正确预测 vs 错误: +4.31% vs +3.46%
+      实际跌 — 正确预测 vs 错误: -3.55% vs -4.96%
+  多数类基线: 62.7%
+  交易回测 (累积 %):
+    只做多 (buy & hold): -60.35%
+    预测涨才做多: -12.50%
+    涨做多/跌做空: +35.35%
+
+==========================================================================================
+【汇总】
+==========================================================================================
+coin   n_train   n_test  best_clf       val_acc   test_acc  base_acc  PnL做多      PnL策略     
+------------------------------------------------------------------------------------------
+BTC    202       68      LinearSVC      53.7      44.1      51.5      -23.75     -32.03    
+ETH    200       68      LinearSVC      57.6      42.6      51.5      -17.13     -14.47    
+SOL    193       66      LogisticReg    53.1      50.0      57.6      -27.17     -18.85    
+XRP    196       66      LinearSVC      46.2      43.9      56.1      -12.43     +1.42     
+DOGE   169       58      BernoulliNB    46.4      60.3      60.3      -5.15      +39.16    
+ADA    174       59      BernoulliNB    51.7      59.3      62.7      -12.50     +35.35    
+
+==========================================================================================
+【与之前 Pearson r 方法对比】
+==========================================================================================
+  之前结论 (zero-shot FinBERT + Pearson r): BTC 2h r ≈ 0 (n=2087, p=0.36)
+  本研究 (监督学习 + 按天聚合 + 次日方向):
+    BTC: accuracy=44.1% vs base=51.5% (edge=-7.4pp)
+    ETH: accuracy=42.6% vs base=51.5% (edge=-8.8pp)
+    SOL: accuracy=50.0% vs base=57.6% (edge=-7.6pp)
+    XRP: accuracy=43.9% vs base=56.1% (edge=-12.1pp)
+    DOGE: accuracy=60.3% vs base=60.3% (edge=+0.0pp)
+    ADA: accuracy=59.3% vs base=62.7% (edge=-3.4pp)
