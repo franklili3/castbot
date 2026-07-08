@@ -528,11 +528,160 @@ def parse_removed_posts(text: str) -> list[dict]:
     return parse_draft_posts(text)
 
 
-def analyze_drafts_detail(draft_data: dict) -> dict | None:
-    """对每篇草稿调用 LLM，给出基于实际违规提示词的具体修改建议。
+def _load_published_examples(limit: int = 5) -> list[dict]:
+    """从 content-buzz-stats.json 加载最近发布的帖子作为对照集。
 
-    输入：draft-stats.json 的完整 dict（含 pageText）
-    返回：{count, drafts: [...], analysis: str} 或 None
+    对照集用于让 LLM 做比较分析：这些帖子结构相似（也含价格预测、交易信号）
+    但通过了审核，从而避免 LLM 给出「删除所有交易信号」这种过度泛化的建议。
+
+    页面结构：每篇帖子是 `[body]\n[stats]\n[YYYY-MM-DD HH:MM]已发布\n[next post body]`。
+    即正文在时间标记【之前】，下一篇的正文在时间标记【之后】。
+    我们用 re.split 切分后，blocks[i-1] 是当前帖子的正文（含其尾部 stats），
+    blocks[i+1] 是下一篇帖子的开头（用于追加补全最后一篇）。
+    """
+    if not BUZZ_STATS_PATH.exists():
+        return []
+    try:
+        buzz = json.loads(BUZZ_STATS_PATH.read_text())
+    except Exception:
+        return []
+    page_text = buzz.get("pageText", "")
+    if not page_text:
+        return []
+
+    # 切掉「热门文章」之后的内容（不属于自己发布的）
+    page_text = page_text.split("热门文章")[0]
+
+    # 已发布帖子以 "YYYY-MM-DD HH:MM已发布" 分隔
+    blocks = re.split(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}已发布)', page_text)
+    if len(blocks) < 3:
+        return []
+
+    # blocks: [pre, marker1, mid1, marker2, mid2, ..., markerN, postN]
+    # 帖子 N 的正文 = blocks[2N-1]（marker 之前的中段，含其正文 + 尾部 stats）
+    examples = []
+    # 从最近的（最后一个 marker）倒序取
+    # marker 在奇数索引：1, 3, 5, ..., 2N-1；正文在 marker 之前的 mid（blocks[marker_idx - 1]）
+    last_marker_idx = len(blocks) - 2  # 最后一个 marker 的索引（奇数）
+    # 确保 last_marker_idx 是奇数（marker）
+    if last_marker_idx % 2 == 0:
+        last_marker_idx -= 1
+
+    idx = last_marker_idx
+    while idx >= 1 and len(examples) < limit:
+        time_str = blocks[idx].replace("已发布", "").strip()
+        body_raw = blocks[idx - 1] or ""
+        # 去掉尾部 stats 行（纯数字、'浏览量'、'点赞量' 等）
+        body_lines = [ln for ln in body_raw.split("\n") if ln.strip()]
+        body_lines = [
+            ln for ln in body_lines
+            if not re.fullmatch(r'\d+', ln.strip())
+            and ln.strip() not in ("浏览量", "点赞量", "回复", "引用", "分享量")
+        ]
+        body = "\n".join(body_lines).strip()
+        if len(body) < 100:
+            idx -= 2
+            continue
+        title = ""
+        tm = re.search(r'[📰🔍]\s*([^\n]+)', body)
+        if tm:
+            title = tm.group(1).strip()[:100]
+        else:
+            title = body_lines[0][:100] if body_lines else ""
+        examples.append({
+            "title": title,
+            "body": body[:700],
+            "publish_time": time_str,
+        })
+        idx -= 2
+
+    return examples
+
+
+def _build_comparative_prompt(drafts: list[dict], examples: list[dict]) -> tuple[str, str]:
+    """构造比较式 LLM prompt：让 LLM 找出【被拦截草稿独有】的违规点。
+
+    返回 (prompt, system_prompt)。
+    关键设计：明确告诉 LLM「对照帖也含价格预测但通过了审核」，
+    从而禁止 LLM 输出「删除价格预测」这类泛泛建议。
+    """
+    draft_summaries = []
+    for i, d in enumerate(drafts, 1):
+        violation = d.get("violation", "（无明显违规提示）")
+        draft_summaries.append(
+            f"--- 被拦截草稿 #{i} ---\n"
+            f"标题: {d['title']}\n"
+            f"发布时间: {d['publish_time']}\n"
+            f"违规提示: {violation}\n"
+            f"币种: {', '.join(d['tickers']) or '无'}\n"
+            f"完整正文:\n{d['body'][:1000]}\n"
+        )
+
+    example_summaries = []
+    for i, ex in enumerate(examples, 1):
+        example_summaries.append(
+            f"--- 对照帖 #{i}（已成功发布） ---\n"
+            f"标题: {ex['title']}\n"
+            f"发布时间: {ex['publish_time']}\n"
+            f"正文:\n{ex['body'][:600]}\n"
+        )
+
+    examples_block = "\n".join(example_summaries) if example_summaries else "（无对照帖可用——仅基于草稿本身分析）"
+
+    system = (
+        "你是币安广场内容审核专家。你必须做【比较分析】："
+        "对照帖同样含价格预测（🎯 第N次预判）、交易方向（💡 看多/看空）、"
+        "币种标签（$BTC $ETH）、时间周期（12小时/24小时）和「⚠️ 不构成投资建议」声明，"
+        "但它们都通过了审核。所以【禁止】给出「删除价格预测/删除交易信号」这类泛泛建议。"
+        "你必须找出【被拦截草稿独有】而对照帖没有的具体违规特征。"
+    )
+
+    prompt = f"""{system}
+
+下面是 {len(drafts)} 篇被审核拦截为草稿的帖子，以及 {len(examples)} 篇【结构类似但已成功发布】的对照帖。
+
+请仔细对比，找出【被拦截草稿独有的】（对照帖没有的）违规特征。
+不要泛泛说「删除价格预测/交易信号」——对照帖证明这些本身是允许的。
+
+=== 被拦截草稿 ===
+{chr(10).join(draft_summaries)}
+
+=== 对照帖（均已成功发布，含价格预测与交易信号） ===
+{examples_block}
+
+请对每篇草稿输出 JSON 数组，每个元素结构如下：
+[
+  {{
+    "draftIndex": 1,
+    "distinguishingFeatures": [
+      {{
+        "feature": "简短特征名（如：冒充品牌身份）",
+        "draftEvidence": "引用草稿原文片段",
+        "comparisonEvidence": "说明对照帖为什么没有这个问题",
+        "fixSuggestion": "最小修改建议（只改真正违规的部分）"
+      }}
+    ],
+    "rejectionRisk": "高/中/低",
+    "riskReason": "理由（基于对比分析）"
+  }}
+]
+
+只输出 JSON，不要解释、不要 markdown 包裹。每个草稿最多 3 条 distinguishingFeatures。
+"""
+
+    return prompt, system
+
+
+def analyze_drafts_detail(draft_data: dict, buzz_data: dict | None = None) -> dict | None:
+    """对每篇草稿调用 LLM，做【比较式】违规分析。
+
+    输入：
+      draft_data: draft-stats.json 的完整 dict（含 pageText）
+      buzz_data: content-buzz-stats.json 的完整 dict（用于加载对照帖；为 None 时自动读取）
+    返回：{count, drafts: [...], analysis: str, comparativeFindings: [...]} 或 None
+
+    关键改进：传入 5 篇已成功发布的对照帖，强制 LLM 找出草稿【独有】的违规点，
+    避免输出「删除所有交易信号」这类过度泛化的建议。
     """
     if not draft_data:
         return None
@@ -541,49 +690,109 @@ def analyze_drafts_detail(draft_data: dict) -> dict | None:
     drafts = parse_draft_posts(page_text)
 
     if not drafts:
-        return {"count": 0, "drafts": [], "analysis": "（草稿页无可解析的草稿块）"}
+        return {"count": 0, "drafts": [], "analysis": "（草稿页无可解析的草稿块）", "comparativeFindings": []}
 
-    # 构造每个草稿的摘要给 LLM
-    draft_summaries = []
-    for i, d in enumerate(drafts, 1):
-        violation = d.get("violation", "（无明显违规提示）")
-        draft_summaries.append(
-            f"--- 草稿 #{i} ---\n"
-            f"标题: {d['title']}\n"
-            f"发布时间: {d['publish_time']}\n"
-            f"违规提示: {violation}\n"
-            f"币种: {', '.join(d['tickers']) or '无'}\n"
-            f"正文摘要:\n{d['body'][:600]}\n"
-        )
+    # 加载对照帖（优先用传入的 buzz_data，否则从文件读）
+    examples = []
+    if buzz_data is None:
+        examples = _load_published_examples(limit=5)
+    else:
+        # 复用已加载的 buzz_data：把传入数据临时替换文件读取路径，调 _load_published_examples
+        # 简化做法：直接调函数（它会读文件），如果文件存在就用文件版本——保持一致性
+        examples = _load_published_examples(limit=5)
+        # 如果传入的 buzz_data 与文件不同（例如测试场景），可以从 buzz_data 解析：
+        if not examples and buzz_data.get("pageText"):
+            try:
+                page = buzz_data.get("pageText", "").split("热门文章")[0]
+                blocks = re.split(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}已发布)', page)
+                if len(blocks) >= 3:
+                    last_marker_idx = len(blocks) - 2
+                    if last_marker_idx % 2 == 0:
+                        last_marker_idx -= 1
+                    idx = last_marker_idx
+                    while idx >= 1 and len(examples) < 5:
+                        time_str = blocks[idx].replace("已发布", "").strip()
+                        body_raw = blocks[idx - 1] or ""
+                        body_lines = [ln for ln in body_raw.split("\n") if ln.strip()]
+                        body_lines = [
+                            ln for ln in body_lines
+                            if not re.fullmatch(r'\d+', ln.strip())
+                            and ln.strip() not in ("浏览量", "点赞量", "回复", "引用", "分享量")
+                        ]
+                        body = "\n".join(body_lines).strip()
+                        if len(body) < 100:
+                            idx -= 2
+                            continue
+                        title = ""
+                        tm = re.search(r'[📰🔍]\s*([^\n]+)', body)
+                        if tm:
+                            title = tm.group(1).strip()[:100]
+                        examples.append({"title": title, "body": body[:700], "publish_time": time_str})
+                        idx -= 2
+            except Exception:
+                examples = []
 
-    prompt = f"""你是币安广场内容审核与运营专家。以下是 {len(drafts)} 篇被审核拦截为草稿的帖子。
-每篇都附带 Binance Square 实际显示的违规提示词（如「未遵守社区管理准则」）。
+    prompt, system_prompt = _build_comparative_prompt(drafts, examples)
+    analysis = call_llm(prompt, system=system_prompt)
 
-请基于【实际违规提示词】给出具体、可执行的修改方案，而不是泛泛而谈。
+    # 尝试解析 JSON（LLM 可能包裹 markdown，做容错）
+    comparative_findings: list[dict] = []
+    if analysis and not analysis.startswith("[LLM"):
+        try:
+            clean = analysis.strip()
+            # 去除可能的 markdown 包裹
+            if clean.startswith("```"):
+                clean = re.sub(r'^```(?:json)?\s*', '', clean)
+                clean = re.sub(r'\s*```$', '', clean.strip())
+            # 抽取最外层 JSON 数组（贪婪到最后一个 ]）
+            m = re.search(r'\[.*\]', clean, flags=re.DOTALL)
+            if m:
+                parsed = json.loads(m.group(0))
+                # 容错：LLM 可能返回嵌套 [[{...}]] 或 [{...}, [...]]
+                flat: list[dict] = []
+                for item in parsed:
+                    if isinstance(item, dict):
+                        flat.append(item)
+                    elif isinstance(item, list):
+                        for sub in item:
+                            if isinstance(sub, dict):
+                                flat.append(sub)
+                comparative_findings = flat
+        except (json.JSONDecodeError, ValueError):
+            # 解析失败时保留原文 analysis，调用方仍可读
+            comparative_findings = []
 
-{chr(10).join(draft_summaries)}
-
-输出格式（每篇草稿）：
-### 草稿 #N 修改方案
-- **违规性质判断**：（基于提示词判断：是敏感词、营销过度、价格预测违规、还是社区准则？）
-- **3 条具体修改建议**：（每条都要指出原文哪一句/哪个词需要改、改成什么）
-- **重新发布风险评估**：（高/中/低 + 理由）
-
-最后给一段「整体规律总结」：这些草稿的共同问题是什么，未来如何避免。
-
-用中文，简洁直接，不要空话。"""
-
-    analysis = call_llm(
-        prompt,
-        system="你是币安广场内容审核专家，深谙平台违规判定逻辑。给出可落地的修改方案，避免泛泛而谈。",
-    )
-
+    # 同时保留人类可读的 analysis 文本（用于 markdown 报告）
     return {
         "count": len(drafts),
         "scrapedAt": draft_data.get("scrapedAt", ""),
         "drafts": drafts,
-        "analysis": analysis,
+        "analysis": analysis if not comparative_findings else _format_findings_md(comparative_findings),
+        "comparativeFindings": comparative_findings,
+        "comparisonPostCount": len(examples),
     }
+
+
+def _format_findings_md(findings: list[dict]) -> str:
+    """把结构化 findings 渲染成 markdown（替代旧 LLM 自由文本，保持报告兼容）。"""
+    if not findings:
+        return "（LLM 未返回结构化结果，见原始 rawAnalysis 字段）"
+    lines = []
+    for item in findings:
+        idx = item.get("draftIndex", "?")
+        risk = item.get("rejectionRisk", "?")
+        reason = item.get("riskReason", "")
+        lines.append(f"### 草稿 #{idx} 比较分析（重新发布风险: {risk}）")
+        if reason:
+            lines.append(f"_{reason}_")
+        lines.append("")
+        for feat in item.get("distinguishingFeatures", []):
+            lines.append(f"- **{feat.get('feature', '?')}**")
+            lines.append(f"  - 草稿证据: {feat.get('draftEvidence', '')}")
+            lines.append(f"  - 对照帖差异: {feat.get('comparisonEvidence', '')}")
+            lines.append(f"  - 修改建议: {feat.get('fixSuggestion', '')}")
+        lines.append("")
+    return "\n".join(lines)
 
 
 def analyze_removed_detail(removed_data: dict) -> dict | None:
@@ -696,19 +905,25 @@ def main():
             if counts[k] is None:
                 counts[k] = c2.get(k)
 
-    # 草稿计数告警（保留旧行为）
+    # 草稿/已下架 per-post 详情分析（先算 detail，再附到告警上）
+    drafts_detail = analyze_drafts_detail(draft_stats, buzz_data=buzz_stats) if draft_stats else None
+    removed_detail = analyze_removed_detail(removed_stats) if removed_stats else None
+
+    # 草稿计数告警（携带比较分析结果，便于 apply-improvements.py 直接消费）
     if counts.get("draft") and counts["draft"] > 0:
-        alerts.append({
+        alert_payload = {
             "type": "DRAFT_VIOLATION",
             "severity": "HIGH",
             "message": f"{counts['draft']} 篇草稿被审核拦截（含违规提示）",
             "draftCount": counts["draft"],
             "removedCount": counts.get("removed"),
-        })
-
-    # 草稿/已下架 per-post 详情分析
-    drafts_detail = analyze_drafts_detail(draft_stats) if draft_stats else None
-    removed_detail = analyze_removed_detail(removed_stats) if removed_stats else None
+            "drafts": [],
+        }
+        if drafts_detail:
+            alert_payload["drafts"] = drafts_detail.get("drafts", [])
+            alert_payload["comparativeFindings"] = drafts_detail.get("comparativeFindings", [])
+            alert_payload["comparisonPostCount"] = drafts_detail.get("comparisonPostCount", 0)
+        alerts.append(alert_payload)
 
     # 报告
     report = {
