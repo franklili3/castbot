@@ -18,7 +18,7 @@
     "express": "^5.1.0",
     "cors": "^2.8.5",
     "https-proxy-agent": "^9.0.0",
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.2.4"
   },
   "devDependencies": {
     "tsx": "^4.19.4",
