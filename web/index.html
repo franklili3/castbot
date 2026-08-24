@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lilibtc Bot 控制台</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f5f7fa;
+  color: #1a1a1a;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+.container { max-width: 760px; margin: 0 auto; padding: 16px; }
+
+header {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 12px 16px;
+  position: sticky; top: 0; z-index: 10;
+}
+header .row { display: flex; justify-content: space-between; align-items: center; max-width: 760px; margin: 0 auto; }
+header h1 { font-size: 18px; font-weight: 600; }
+.status-pill {
+  font-size: 12px; padding: 4px 10px; border-radius: 999px;
+  background: #f0f0f0; color: #666;
+}
+.status-pill.running { background: #e6f7ed; color: #237a3b; }
+.status-pill.stopped { background: #fff1f0; color: #cf1322; }
+
+.tabs {
+  display: flex; background: #fff; border-bottom: 1px solid #e8e8e8;
+  position: sticky; top: 56px; z-index: 9;
+}
+.tab {
+  flex: 1; padding: 12px 8px; text-align: center; cursor: pointer;
+  border: none; background: none; font-size: 14px; color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+}
+.tab:hover { color: #1890ff; }
+.tab.active { color: #1890ff; border-bottom-color: #1890ff; font-weight: 500; }
+
+.panel { display: none; padding: 16px; }
+.panel.active { display: block; }
+
+.card {
+  background: #fff; border-radius: 8px; padding: 16px;
+  margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.card h3 { font-size: 14px; color: #888; margin-bottom: 12px; font-weight: 500; }
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; }
+.row > div { flex: 1; min-width: 120px; }
+.kv { font-size: 13px; margin: 6px 0; }
+.kv .k { color: #888; margin-right: 6px; }
+.kv .v { color: #1a1a1a; word-break: break-all; }
+
+button {
+  background: #1890ff; color: #fff; border: none; padding: 8px 16px;
+  border-radius: 4px; font-size: 14px; cursor: pointer; transition: opacity .15s;
+}
+button:hover { opacity: .9; }
+button:disabled { background: #ccc; cursor: not-allowed; }
+button.danger { background: #cf1322; }
+button.ghost { background: #fff; color: #666; border: 1px solid #d9d9d9; }
+button.ghost:hover { color: #1890ff; border-color: #1890ff; }
+
+input, select {
+  width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9;
+  border-radius: 4px; font-size: 14px; font-family: inherit;
+}
+input:focus, select:focus { outline: none; border-color: #1890ff; }
+label { font-size: 13px; color: #666; display: block; margin-bottom: 6px; }
+.field { margin-bottom: 12px; }
+.form-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+.alert {
+  padding: 10px 12px; border-radius: 4px; font-size: 13px; margin: 8px 0;
+}
+.alert.error { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; }
+.alert.success { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+.alert.info { background: #e6f7ff; color: #096dd9; border: 1px solid #91d5ff; }
+
+.log-list { font-family: SFMono-Regular, "Menlo", Consolas, monospace; font-size: 12px; }
+.log-item {
+  padding: 6px 8px; border-bottom: 1px solid #f0f0f0;
+  display: flex; gap: 8px; align-items: center;
+}
+.log-item .time { color: #888; min-width: 60px; }
+.log-item .taskid { color: #1890ff; min-width: 50px; }
+.log-item .type { color: #666; min-width: 80px; }
+.log-item .dur { color: #888; margin-left: auto; }
+.log-item .ok { color: #389e0d; }
+.log-item .fail { color: #cf1322; }
+.log-item .msg { color: #888; margin-left: 8px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; }
+.log-item .msg:hover { text-overflow: clip; white-space: normal; word-break: break-all; cursor: help; }
+.log-item .msg:empty { display: none; }
+.empty { text-align: center; color: #888; padding: 32px 16px; font-size: 13px; }
+
+.token-form { max-width: 360px; margin: 60px auto; }
+.token-form h2 { font-size: 18px; margin-bottom: 16px; text-align: center; }
+.token-form p { font-size: 13px; color: #888; margin-bottom: 16px; }
+
+.login-screen { max-width: 400px; margin: 40px auto; }
+
+.deps { display: flex; gap: 16px; }
+.dep { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.dep .dot { width: 8px; height: 8px; border-radius: 50%; }
+.dep .dot.ok { background: #52c41a; }
+.dep .dot.no { background: #cf1322; }
+
+.switch {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;
+}
+.switch input { width: auto; }
+
+@media (max-width: 480px) {
+  .container { padding: 8px; }
+  .row > div { min-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <h1>🤖 Lilibtc Bot</h1>
+    <span id="statusPill" class="status-pill stopped">未登录</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="overview">概览</button>
+  <button class="tab" data-tab="login">登录</button>
+  <button class="tab" data-tab="settings">设置</button>
+  <button class="tab" data-tab="logs">日志</button>
+</nav>
+
+<div class="container">
+
+<!-- ============ 概览 ============ -->
+<div id="tab-overview" class="panel active">
+
+  <div id="notLoggedInBox" class="alert info" style="display:none;">
+    尚未登录，请前往 <a href="#" onclick="switchTab('login');return false;">登录</a> Tab 输入 API Key。
+  </div>
+
+  <div class="card">
+    <h3>状态</h3>
+    <div class="kv"><span class="k">代理:</span><span class="v" id="agentStatus">—</span></div>
+    <div class="kv"><span class="k">用户:</span><span class="v" id="agentUser">—</span></div>
+    <div class="kv"><span class="k">套餐:</span><span class="v" id="agentPlan">—</span></div>
+    <div class="kv"><span class="k">服务器:</span><span class="v" id="agentServer">—</span></div>
+    <div class="kv"><span class="k">登录时间:</span><span class="v" id="agentLoginAt">—</span></div>
+    <div class="form-actions" style="margin-top: 12px;">
+      <button id="btnStart" onclick="apiStart()">启动</button>
+      <button id="btnStop" class="danger" onclick="apiStop()">停止</button>
+      <button class="ghost" onclick="refreshOverview()">刷新</button>
+    </div>
+    <div id="agentAlert"></div>
+  </div>
+
+  <div class="card">
+    <h3>依赖（仅 macOS 检测）</h3>
+    <div class="deps">
+      <div class="dep"><span id="depChrome" class="dot no"></span>Chrome</div>
+      <div class="dep"><span id="depPeekaboo" class="dot no"></span>Peekaboo</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>今日最近日志</h3>
+    <div id="recentLogs" class="log-list">
+      <div class="empty">暂无日志</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 登录 ============ -->
+<div id="tab-login" class="panel">
+  <div class="card login-screen">
+    <h3>登录</h3>
+    <div class="field">
+      <label>API Key</label>
+      <input type="password" id="loginKey" placeholder="sk-xxxxx 或 bsq_xxxxx" autocomplete="off">
+    </div>
+    <div id="loginAlert"></div>
+    <div class="form-actions">
+      <button onclick="apiLogin()">登录</button>
+    </div>
+    <p style="margin-top: 16px; font-size: 12px; color: #888;">
+      API Key 用于身份验证。登录成功后会写入本地配置文件，后续代理启动时自动读取。
+    </p>
+  </div>
+</div>
+
+<!-- ============ 设置 ============ -->
+<div id="tab-settings" class="panel">
+
+  <div class="card">
+    <h3>币安广场 OpenAPI Key</h3>
+    <p style="font-size: 12px; color: #888; margin-bottom: 12px;">
+      用于发帖到 binance.com。本地存储（权限 600），不上传服务器。
+    </p>
+    <div class="kv"><span class="k">当前:</span><span class="v" id="binanceKeyMasked">—</span></div>
+    <div class="field" style="margin-top: 12px;">
+      <label>设置 / 更换 Key</label>
+      <input type="password" id="binanceKeyInput" placeholder="粘贴币安广场 OpenAPI Key" autocomplete="off">
+    </div>
+    <div id="binanceAlert"></div>
+    <div class="form-actions">
+      <button onclick="apiSetBinanceKey()">保存</button>
+      <button class="ghost" onclick="apiClearBinanceKey()">清除</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>服务器地址</h3>
+    <div class="field">
+      <label>Server URL</label>
+      <input id="serverUrlInput" placeholder="https://api.lilibtc.com">
+    </div>
+    <div class="form-actions">
+      <button onclick="apiSetServerUrl()">保存</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>网络代理（访问 binance.com 必填）</h3>
+    <p style="font-size: 12px; color: #888; margin-bottom: 12px;">
+      中国大陆需要本地代理客户端（Clash / V2Ray / ss 等）。填写完整 URL 或端口号皆可，启动代理会自动注入到子进程。
+    </p>
+    <div class="kv"><span class="k">当前:</span><span class="v" id="proxyMasked">—</span></div>
+    <div class="field" style="margin-top: 12px;">
+      <label>代理 URL（如 http://127.0.0.1:7897 或端口 7897）</label>
+      <input id="proxyInput" placeholder="http://127.0.0.1:7897" autocomplete="off">
+    </div>
+    <div id="proxyAlert"></div>
+    <div class="form-actions">
+      <button onclick="apiSetProxy()">保存</button>
+      <button class="ghost" onclick="apiTestProxy()">测试连接</button>
+      <button class="ghost" onclick="apiClearProxy()">清除</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 日志 ============ -->
+<div id="tab-logs" class="panel">
+  <div class="card">
+    <div class="row" style="align-items: flex-end;">
+      <div>
+        <label>日期</label>
+        <select id="logDateSelect" onchange="refreshLogs()"></select>
+      </div>
+      <div>
+        <label>显示条数</label>
+        <select id="logLimitSelect" onchange="refreshLogs()">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="500">500</option>
+        </select>
+      </div>
+      <div style="flex: 0;">
+        <label class="switch">
+          <input type="checkbox" id="logAutoRefresh" checked onchange="refreshLogs()">
+          自动刷新
+        </label>
+      </div>
+      <div style="flex: 0;">
+        <button class="ghost" onclick="refreshLogs()">刷新</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 id="logTitle">日志</h3>
+    <div id="logList" class="log-list">
+      <div class="empty">选择日期查看日志</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.container -->
+
+<!-- ============ Token 输入页（首次访问） ============ -->
+<div id="tokenGate" style="display:none;">
+  <div class="container">
+    <div class="card token-form">
+      <h2>🔐 控制台访问令牌</h2>
+      <p>请粘贴 cli 启动时打印的完整 URL，或直接粘贴 token：</p>
+      <div class="field">
+        <input id="tokenInput" placeholder="http://127.0.0.1:8421/?token=..." autocomplete="off">
+      </div>
+      <div id="tokenAlert"></div>
+      <div class="form-actions">
+        <button onclick="saveTokenFromInput()">进入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== Token 管理 ============
+function getToken() {
+  const q = new URLSearchParams(location.search).get('token');
+  if (q) {
+    sessionStorage.setItem('webToken', q);
+    history.replaceState(null, '', location.pathname);
+    return q;
+  }
+  return sessionStorage.getItem('webToken');
+}
+function saveTokenFromInput() {
+  const raw = document.getElementById('tokenInput').value.trim();
+  if (!raw) return;
+  let token = raw;
+  try {
+    const m = raw.match(/[?&]token=([a-f0-9]+)/i);
+    if (m) token = m[1];
+  } catch {}
+  sessionStorage.setItem('webToken', token);
+  location.reload();
+}
+function logout() {
+  sessionStorage.removeItem('webToken');
+  location.reload();
+}
+
+const TOKEN = getToken();
+if (!TOKEN) {
+  document.querySelector('.container').style.display = 'none';
+  document.querySelector('nav.tabs').style.display = 'none';
+  document.getElementById('tokenGate').style.display = 'block';
+} else {
+  document.getElementById('tokenGate').style.display = 'none';
+}
+
+// ========== API ============
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: {
+      'Authorization': `Bearer ${TOKEN}`,
+      ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(opts.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem('webToken');
+    alert('Token 已失效，请重新打开控制台 URL');
+    location.reload();
+    throw new Error('unauthorized');
+  }
+  let data;
+  try { data = await res.json(); } catch { data = null; }
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  return data;
+}
+
+// ========== Tab 切换 ============
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+  if (name === 'overview') refreshOverview();
+  if (name === 'settings') refreshSettings();
+  if (name === 'logs') refreshLogDates();
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+// ========== 概览 ============
+function fmtTime(ts) {
+  try { return new Date(ts).toLocaleString('zh-CN', { hour12: false }); } catch { return ts || '-'; }
+}
+
+async function refreshOverview() {
+  try {
+    const s = await api('/api/state');
+    const cfg = s.config;
+    const pill = document.getElementById('statusPill');
+    if (!cfg) {
+      pill.className = 'status-pill stopped';
+      pill.textContent = '未登录';
+      document.getElementById('notLoggedInBox').style.display = 'block';
+    } else {
+      document.getElementById('notLoggedInBox').style.display = 'none';
+      if (s.agent.running) {
+        pill.className = 'status-pill running';
+        pill.textContent = `运行中 #${s.agent.pid}`;
+      } else {
+        pill.className = 'status-pill stopped';
+        pill.textContent = '已停止';
+      }
+      document.getElementById('agentUser').textContent = cfg.userId || '-';
+      document.getElementById('agentPlan').textContent = cfg.plan || '-';
+      document.getElementById('agentServer').textContent = cfg.serverUrl || '-';
+      document.getElementById('agentLoginAt').textContent = fmtTime(cfg.loggedInAt);
+    }
+    document.getElementById('agentStatus').innerHTML = s.agent.running
+      ? `<span style="color:#389e0d;">● 运行中 (PID ${s.agent.pid})</span>`
+      : `<span style="color:#cf1322;">○ 已停止</span>`;
+
+    document.getElementById('depChrome').className = 'dot ' + (s.deps.chrome ? 'ok' : 'no');
+    document.getElementById('depPeekaboo').className = 'dot ' + (s.deps.peekaboo ? 'ok' : 'no');
+
+    const list = document.getElementById('recentLogs');
+    if (!s.recentLogs || s.recentLogs.length === 0) {
+      list.innerHTML = '<div class="empty">今日暂无日志</div>';
+    } else {
+      list.innerHTML = s.recentLogs.reverse().map(e => {
+        const msgHtml = e.success
+          ? (e.post_url ? `<a href="${escapeHtml(e.post_url)}" target="_blank" rel="noopener">${escapeHtml(e.post_url)}</a>` : '已发布')
+          : escapeHtml(e.info || e.error || e.message || e.steps || '未知错误');
+        return `
+        <div class="log-item">
+          <span class="time">${e.ts ? new Date(e.ts).toLocaleTimeString('zh-CN', { hour12: false }) : '-'}</span>
+          <span class="taskid">#${e.task_id || '-'}</span>
+          <span class="type">${e.type || '-'}</span>
+          <span class="${e.success ? 'ok' : 'fail'}">${e.success ? '✓' : '✗'}</span>
+          <span class="msg">${msgHtml}</span>
+          <span class="dur">${e.duration_ms || 0}ms</span>
+        </div>
+      `;
+      }).join('');
+    }
+  } catch (e) {
+    console.error('refresh overview:', e);
+  }
+}
+
+async function apiStart() {
+  document.getElementById('btnStart').disabled = true;
+  try {
+    const r = await api('/api/start', { method: 'POST' });
+    if (r.alreadyRunning) {
+      showAgentAlert('代理已在运行', 'info');
+    } else {
+      showAgentAlert(`✅ 已启动 (PID ${r.pid})`, 'success');
+    }
+    setTimeout(refreshOverview, 500);
+  } catch (e) {
+    showAgentAlert(e.message, 'error');
+  } finally {
+    document.getElementById('btnStart').disabled = false;
+  }
+}
+
+async function apiStop() {
+  document.getElementById('btnStop').disabled = true;
+  try {
+    await api('/api/stop', { method: 'POST' });
+    showAgentAlert('已停止', 'success');
+    setTimeout(refreshOverview, 500);
+  } catch (e) {
+    showAgentAlert(e.message, 'error');
+  } finally {
+    document.getElementById('btnStop').disabled = false;
+  }
+}
+
+function showAgentAlert(msg, type) {
+  const el = document.getElementById('agentAlert');
+  el.innerHTML = `<div class="alert ${type}">${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 4000);
+}
+
+// ========== 登录 ============
+async function apiLogin() {
+  const key = document.getElementById('loginKey').value.trim();
+  if (!key) return;
+  try {
+    const r = await api('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey: key }),
+    });
+    document.getElementById('loginAlert').innerHTML = `<div class="alert success">✅ 登录成功（用户：${r.config.userId}）</div>`;
+    document.getElementById('loginKey').value = '';
+    setTimeout(() => { switchTab('overview'); refreshOverview(); }, 800);
+  } catch (e) {
+    document.getElementById('loginAlert').innerHTML = `<div class="alert error">${e.message}</div>`;
+  }
+}
+
+// ========== 设置 ============
+async function refreshSettings() {
+  try {
+    const r = await api('/api/binance-key');
+    document.getElementById('binanceKeyMasked').textContent = r.key || '(未设置)';
+    const c = await api('/api/config');
+    if (c.config?.serverUrl) document.getElementById('serverUrlInput').value = c.config.serverUrl;
+    document.getElementById('proxyMasked').textContent = c.effectiveProxy
+      ? (c.config?.proxy ? c.config.proxy : `${c.effectiveProxy} (env)`)
+      : '(未设置)';
+    if (c.config?.proxy) document.getElementById('proxyInput').value = c.config.proxy;
+  } catch (e) { console.error(e); }
+}
+
+async function apiSetProxy() {
+  const v = document.getElementById('proxyInput').value.trim();
+  if (!v) return apiClearProxy();
+  try {
+    const r = await api('/api/proxy', {
+      method: 'POST',
+      body: JSON.stringify({ proxy: v }),
+    });
+    document.getElementById('proxyAlert').innerHTML = `<div class="alert success">✅ 已保存：${r.proxy}（agent 已自动重载，约 1 秒内生效）</div>`;
+    refreshSettings();
+  } catch (e) {
+    document.getElementById('proxyAlert').innerHTML = `<div class="alert error">${e.message}</div>`;
+  }
+}
+
+async function apiClearProxy() {
+  try {
+    await api('/api/proxy', {
+      method: 'POST',
+      body: JSON.stringify({ proxy: null }),
+    });
+    document.getElementById('proxyAlert').innerHTML = `<div class="alert success">已清除代理设置</div>`;
+    document.getElementById('proxyInput').value = '';
+    refreshSettings();
+  } catch (e) {
+    document.getElementById('proxyAlert').innerHTML = `<div class="alert error">${e.message}</div>`;
+  }
+}
+
+async function apiTestProxy() {
+  const v = document.getElementById('proxyInput').value.trim();
+  const query = v ? `?proxy=${encodeURIComponent(v)}` : '';
+  document.getElementById('proxyAlert').innerHTML = `<div class="alert info">测试中...</div>`;
+  try {
+    const r = await api(`/api/proxy/test${query}`);
+    if (r.ok) {
+      document.getElementById('proxyAlert').innerHTML = `<div class="alert success">✅ 代理可用（${r.ms}ms，HTTP ${r.status}）</div>`;
+    } else {
+      document.getElementById('proxyAlert').innerHTML = `<div class="alert error">❌ 不可用：${r.error || `HTTP ${r.status}`}</div>`;
+    }
+  } catch (e) {
+    document.getElementById('proxyAlert').innerHTML = `<div class="alert error">${e.message}</div>`;
+  }
+}
+
+async function apiSetBinanceKey() {
+  const key = document.getElementById('binanceKeyInput').value.trim();
+  if (!key) return;
+  try {
+    const r = await api('/api/binance-key', {
+      method: 'POST',
+      body: JSON.stringify({ key }),
+    });
+    document.getElementById('binanceAlert').innerHTML = `<div class="alert success">✅ 已保存：${r.key}</div>`;
+    document.getElementById('binanceKeyInput').value = '';
+    refreshSettings();
+  } catch (e) {
+    document.getElementById('binanceAlert').innerHTML = `<div class="alert error">${e.message}</div>`;
+  }
+}
+
+async function apiClearBinanceKey() {
+  if (!confirm('确认清除币安 OpenAPI Key？')) return;
+  try {
+    await api('/api/binance-key', { method: 'DELETE' });
+    document.getElementById('binanceAlert').innerHTML = `<div class="alert success">已清除</div>`;
+    refreshSettings();
+  } catch (e) {
+    document.getElementById('binanceAlert').innerHTML = `<div class="alert error">${e.message}</div>`;
+  }
+}
+
+async function apiSetServerUrl() {
+  const v = document.getElementById('serverUrlInput').value.trim();
+  if (!v) return;
+  try {
+    await api('/api/config', {
+      method: 'POST',
+      body: JSON.stringify({ key: 'serverUrl', value: v }),
+    });
+    document.getElementById('binanceAlert').innerHTML = `<div class="alert success">✅ 服务器地址已更新</div>`;
+  } catch (e) {
+    document.getElementById('binanceAlert').innerHTML = `<div class="alert error">${e.message}</div>`;
+  }
+}
+
+// ========== 日志 ============
+let logTimer = null;
+async function refreshLogDates() {
+  const sel = document.getElementById('logDateSelect');
+  const today = new Date().toISOString().slice(0, 10);
+  // 兜底 today，避免 /api/logs/dates 失败时 select 全空导致 refreshLogs early-return 看不到任何提示
+  let dates = [today];
+  let fetchError = null;
+  try {
+    const r = await api('/api/logs/dates');
+    dates = r.dates || [];
+    if (dates.length === 0) dates.push(today);
+    if (!dates.includes(today)) dates.unshift(today);
+  } catch (e) {
+    console.error(e);
+    fetchError = e.message || String(e);
+  }
+  const current = sel.value || today;
+  sel.innerHTML = dates.map(d => `<option value="${d}" ${d === current ? 'selected' : ''}>${d}</option>`).join('');
+  refreshLogs(fetchError);
+}
+
+async function refreshLogs(fetchError) {
+  if (logTimer) { clearInterval(logTimer); logTimer = null; }
+  const date = document.getElementById('logDateSelect').value;
+  if (!date) return;
+  const limit = document.getElementById('logLimitSelect').value;
+  const list = document.getElementById('logList');
+  try {
+    const r = await api(`/api/logs?date=${encodeURIComponent(date)}&limit=${limit}`);
+    document.getElementById('logTitle').textContent = `日志（${date}，共 ${r.entries.length} 条）`;
+    if (fetchError) {
+      list.innerHTML = `<div class="empty">⚠️ 日期列表加载失败：${escapeHtml(fetchError)}（已显示今日）</div>`;
+    } else if (r.entries.length === 0) {
+      list.innerHTML = '<div class="empty">当日无日志</div>';
+    } else {
+      list.innerHTML = r.entries.map(e => {
+        const msgHtml = e.success
+          ? (e.post_url ? `<a href="${escapeHtml(e.post_url)}" target="_blank" rel="noopener">${escapeHtml(e.post_url)}</a>` : '已发布')
+          : escapeHtml(e.info || e.error || e.message || e.steps || '未知错误');
+        return `
+        <div class="log-item">
+          <span class="time">${e.ts ? new Date(e.ts).toLocaleTimeString('zh-CN', { hour12: false }) : '-'}</span>
+          <span class="taskid">#${e.task_id || '-'}</span>
+          <span class="type">${e.type || '-'}</span>
+          <span class="${e.success ? 'ok' : 'fail'}">${e.success ? '✓' : '✗'}</span>
+          <span class="msg">${msgHtml}</span>
+          <span class="dur">${e.duration_ms || 0}ms</span>
+        </div>
+      `;
+      }).join('');
+    }
+  } catch (e) {
+    list.innerHTML = `<div class="empty">日志加载失败：${escapeHtml(e.message)}</div>`;
+  }
+
+  if (document.getElementById('logAutoRefresh').checked) {
+    logTimer = setInterval(refreshLogsSilent, 10000);
+  }
+}
+function refreshLogsSilent() {
+  if (document.querySelector('.tab.active').dataset.tab !== 'logs') {
+    if (logTimer) { clearInterval(logTimer); logTimer = null; }
+    return;
+  }
+  refreshLogs();
+}
+
+// ========== 启动 ============
+if (TOKEN) {
+  refreshOverview();
+  setInterval(() => {
+    if (document.querySelector('.tab.active').dataset.tab === 'overview') refreshOverview();
+  }, 5000);
+}
+</script>
+</body>
+</html>
