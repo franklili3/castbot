@@ -25,17 +25,25 @@
 
 ### ② 安装
 
+**一键安装（推荐）**：
+
+```bash
+# macOS / Linux
+curl -sL https://api.lilibtc.com/install.sh | bash
+```
+
+```powershell
+# Windows —— 必须在 PowerShell 中运行（无需 WSL）
+irm https://api.lilibtc.com/install.ps1 | iex
+```
+
+**或通过 npm**（大陆网络建议先切镜像加速：`npm config set registry https://registry.npmmirror.com`）：
+
 ```bash
 npm install -g lilibtc-bot
-
-（大陆网络建议先切镜像加速：`npm config set registry https://registry.npmmirror.com`）
 ```
 
-或一键脚本（自动装 Node 依赖，npm 失败时回退 GitHub/server 源）：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/franklili3/lilibtc-bot/opensource/install.sh | bash
-```
+**备用**：本仓库的 [install.sh](install.sh)（npm 失败时回退 GitHub/server 源）。
 
 ### ③ 登录 + 配置币安 key + 启动
 
@@ -56,7 +64,7 @@ lilibtc-bot start
 
 ## 系统要求
 
-- Node.js ≥ 18（Linux / macOS / Windows WSL）
+- Node.js ≥ 18（Linux / macOS / Windows 均可；**Windows 需在 PowerShell 中运行**，无需 WSL）
 - 大陆网络：工具需要访问 binance.com 与 GitHub（更新源）。如有代理，配置方式：
   ```bash
   HTTPS_PROXY=http://127.0.0.1:7897 lilibtc-bot start
