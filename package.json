@@ -1,20 +1,20 @@
 {
-  "name": "lilibtc-bot",
-  "version": "1.0.25",
-  "description": "Lilibtc Bot - 币安广场自动发布工具 - 自动同步内容到 Binance Square，提升个人品牌影响力",
+  "name": "castbot",
+  "version": "1.1.0",
+  "description": "Castbot Bot - 币安广场自动发布工具 - 自动同步内容到 Binance Square，提升个人品牌影响力",
   "type": "module",
-  "author": "lilibtc_com <lili@lilibtc.com>",
+  "author": "castbot <lili@castbot.io>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/franklili3/square-agent.git"
+    "url": "git+https://github.com/franklili3/castbot.git"
   },
-  "homepage": "https://lilibtc.com",
+  "homepage": "https://castbot.io",
   "bugs": {
-    "url": "https://github.com/franklili3/square-agent/issues"
+    "url": "https://github.com/franklili3/castbot/issues"
   },
   "keywords": [
-    "lilibtc-bot",
-    "lilibtc",
+    "castbot",
+    "castbot",
     "binance",
     "square",
     "auto-publishing",
@@ -27,7 +27,7 @@
     "自动发布"
   ],
   "bin": {
-    "lilibtc-bot": "cli.mjs"
+    "castbot": "cli.mjs"
   },
   "dependencies": {
     "undici": "^6.0.0"

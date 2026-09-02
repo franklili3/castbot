@@ -21,7 +21,7 @@ import { fileURLToPath } from 'url';
 // 热重载：用户在 web 面板改了 config.proxy 后，fs.watch 触发 applyProxyFromConfig 重新
 // setGlobalDispatcher——agent 不需要 stop/start。config.proxy 优先于 env，因为 env 是
 // cli.mjs 启动时注入的快照，运行时不变；用户改的是 config.json。
-const PROXY_CONFIG_FILE = join(homedir(), '.lilibtc-bot', 'config.json');
+const PROXY_CONFIG_FILE = join(homedir(), '.castbot', 'config.json');
 let _currentProxyUrl = undefined;  // 记录当前在用的代理 URL，避免重复 setGlobalDispatcher（首次必须设）
 
 async function applyProxyFromConfig() {
@@ -73,7 +73,7 @@ try {
 }
 
 // ============ 配置 ============
-const SERVER_URL = process.env.SERVER_URL || process.env.LILIBTC_SERVER_URL || 'https://api.lilibtc.com';
+const SERVER_URL = process.env.SERVER_URL || process.env.CASTBOT_SERVER_URL || 'https://api.castbot.io';
 const API_KEY = process.env.API_KEY || '';  // §2.1 不硬编码；production 由 EnvironmentFile(.env) 提供
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL || '30000');
 const AGENT_TOKEN = process.env.CRYPTOQCLAW_AGENT_TOKEN || process.env.AGENT_TOKEN;
@@ -91,13 +91,13 @@ const MAX_IMAGES = 4;
 
 /**
  * 读取 OpenAPI Key（仅本地，不从服务器获取）
- * 顺序：env BINANCE_SQUARE_OPENAPI_KEY → ~/.lilibtc-bot/binance-api-key → ~/.cryptoqclaw/binance-api-key（旧路径回退）
+ * 顺序：env BINANCE_SQUARE_OPENAPI_KEY → ~/.castbot/binance-api-key → ~/.cryptoqclaw/binance-api-key（旧路径回退）
  */
 function getApiKey() {
   const env = process.env.BINANCE_SQUARE_OPENAPI_KEY || process.env.BINANCE_SQUARE_API_KEY;
   if (env?.trim()) return env.trim();
   for (const configFile of [
-    join(homedir(), '.lilibtc-bot', 'binance-api-key'),
+    join(homedir(), '.castbot', 'binance-api-key'),
     join(homedir(), '.cryptoqclaw', 'binance-api-key'),
   ]) {
     if (existsSync(configFile)) {
@@ -224,7 +224,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
  * - 处理失败：返回 null（status = 2 表示处理失败）
  *
  * 【资源管理】
- * - 临时文件：下载后存放在 ~/.lilibtc-bot/tmp/
+ * - 临时文件：下载后存放在 ~/.castbot/tmp/
  * - 清理策略：finally 块确保删除临时文件
  * - 权限设置：tmp 目录 755，避免权限问题
  *
@@ -234,7 +234,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
  */
 async function uploadSingleImage(imageUrl, apiKey) {
   // 临时目录：支持环境变量覆盖（便于测试）
-  const tmpRoot = (process.env.CRYPTOQCLAW_TMP_DIR || process.env.SQUARE_AGENT_TMP_DIR) || join(homedir(), '.lilibtc-bot', 'tmp');
+  const tmpRoot = (process.env.CRYPTOQCLAW_TMP_DIR || process.env.SQUARE_AGENT_TMP_DIR) || join(homedir(), '.castbot', 'tmp');
   if (!existsSync(tmpRoot)) mkdirSync(tmpRoot, { recursive: true, mode: 0o755 });
 
   // 提取文件扩展名（用于 Content-Type 判断）
@@ -434,15 +434,15 @@ async function publishViaApi(post) {
 }
 
 // ============ 日志 ============
-// 与 cli.mjs LOG_DIR 保持一致（~/.lilibtc-bot/publisher/logs）。
+// 与 cli.mjs LOG_DIR 保持一致（~/.castbot/publisher/logs）。
 // v1.0.16 之前 agent 写在 ~/.cryptoqclaw/publisher/logs，首次启动迁移老目录。
 const LOG_DIR = (process.env.CRYPTOQCLAW_PUBLISHER_LOG_DIR || process.env.SQUARE_AGENT_PUBLISHER_LOG_DIR)
-  || join(homedir(), '.lilibtc-bot', 'publisher', 'logs');
+  || join(homedir(), '.castbot', 'publisher', 'logs');
 {
   const legacyLogDir = join(homedir(), '.cryptoqclaw', 'publisher', 'logs');
   if (!existsSync(LOG_DIR) && existsSync(legacyLogDir)) {
     try {
-      mkdirSync(join(homedir(), '.lilibtc-bot', 'publisher'), { recursive: true });
+      mkdirSync(join(homedir(), '.castbot', 'publisher'), { recursive: true });
       renameSync(legacyLogDir, LOG_DIR);
     } catch {}
   }
@@ -560,14 +560,14 @@ try {
 }
 
 // v1.0.25+ 更新主通道：npm registry（中国大陆可达性最好）。
-// LILIBTC_UPDATE_CHANNEL=github 切 GitHub Releases（需代理）。
+// CASTBOT_UPDATE_CHANNEL=github 切 GitHub Releases（需代理）。
 // 旧 server 通道（/api/agent/version + /download/agent）保留给存量排障：
-// 设 LILIBTC_UPDATE_BASE（如 https://api.lilibtc.com）即切回 server 通道。
-const GITHUB_REPO = 'franklili3/lilibtc-bot';
-const UPDATE_BASE_OVERRIDE = process.env.LILIBTC_UPDATE_BASE || '';
-const UPDATE_CHANNEL = (process.env.LILIBTC_UPDATE_CHANNEL || 'npm').toLowerCase();
-const NPM_REGISTRY = (process.env.LILIBTC_NPM_REGISTRY || 'https://registry.npmjs.org').replace(/\/+$/, '');
-const NPM_PACKAGE = 'lilibtc-bot';
+// 设 CASTBOT_UPDATE_BASE（如 https://api.castbot.io）即切回 server 通道。
+const GITHUB_REPO = 'franklili3/castbot';
+const UPDATE_BASE_OVERRIDE = process.env.CASTBOT_UPDATE_BASE || '';
+const UPDATE_CHANNEL = (process.env.CASTBOT_UPDATE_CHANNEL || 'npm').toLowerCase();
+const NPM_REGISTRY = (process.env.CASTBOT_NPM_REGISTRY || 'https://registry.npmjs.org').replace(/\/+$/, '');
+const NPM_PACKAGE = 'castbot';
 
 async function checkUpdate() {
   try {
@@ -578,13 +578,13 @@ async function checkUpdate() {
     }
     if (UPDATE_CHANNEL === 'github') {
       const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-        headers: { 'User-Agent': 'lilibtc-bot', 'Accept': 'application/vnd.github+json' },
+        headers: { 'User-Agent': 'castbot', 'Accept': 'application/vnd.github+json' },
       });
       if (!res.ok) return null;
       const rel = await res.json();
       const version = String(rel.tag_name || '').replace(/^v/, '');
       if (!version) return null;
-      const asset = (rel.assets || []).find(a => a.name === `lilibtc-bot-v${version}.tgz`);
+      const asset = (rel.assets || []).find(a => a.name === `castbot-v${version}.tgz`);
       if (!asset?.browser_download_url) return null;
       return { version, tarballUrl: asset.browser_download_url };
     }
@@ -628,10 +628,10 @@ async function selfUpdate() {
   // npm（默认）/ GitHub 通道：semver 比对；有新版时委托同目录 cli.mjs 的 update
   // 命令完成 tarball 下载、node --check、备份、daemon 重启——agent 只负责检测与触发。
   if (!isNewerVersion(info.version, PUBLISHER_VERSION)) return false;
-  console.log(`🔄 发现新版本 v${info.version}（当前 v${PUBLISHER_VERSION}），委托 lilibtc-bot update 升级...`);
+  console.log(`🔄 发现新版本 v${info.version}（当前 v${PUBLISHER_VERSION}），委托 castbot update 升级...`);
   const CLI_PATH = join(resolve(AGENT_PATH, '..'), 'cli.mjs');
   if (!existsSync(CLI_PATH)) {
-    console.warn('⚠️ 未找到同目录 cli.mjs，请手动运行: lilibtc-bot update');
+    console.warn('⚠️ 未找到同目录 cli.mjs，请手动运行: castbot update');
     return false;
   }
   const updateArgs = [CLI_PATH, 'update'];
@@ -642,7 +642,7 @@ async function selfUpdate() {
 }
 
 // ============ PID Lockfile（防多实例） ============
-const LOCK_FILE = join(homedir(), '.lilibtc-bot', 'publisher.lock');
+const LOCK_FILE = join(homedir(), '.castbot', 'publisher.lock');
 
 /**
  * 判断 lockfile 中的 PID 是否真的是另一个 square-agent 实例。
@@ -686,8 +686,8 @@ function releaseLock() {
 }
 
 function acquireLock() {
-  // 确保 ~/.lilibtc-bot 目录存在
-  const dir = join(homedir(), '.lilibtc-bot');
+  // 确保 ~/.castbot 目录存在
+  const dir = join(homedir(), '.castbot');
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
   if (existsSync(LOCK_FILE)) {
@@ -777,13 +777,13 @@ function onPublishResult(success, error) {
 // ============ 主循环 ============
 async function main() {
   acquireLock();
-  console.log(`🤖 Lilibtc-bot v${PUBLISHER_VERSION} (API-only)`);
+  console.log(`🤖 Castbot-bot v${PUBLISHER_VERSION} (API-only)`);
   console.log(`📡 Server: ${SERVER_URL}`);
 
   // 检查 API Key（无 Key 直接退出）
   if (!getApiKey()) {
     console.error('❌ 未检测到币安广场 OpenAPI Key');
-    console.error('   请配置: lilibtc-bot set-binance-key YOUR_KEY');
+    console.error('   请配置: castbot set-binance-key YOUR_KEY');
     console.error('   或设置环境变量: $env:BINANCE_SQUARE_OPENAPI_KEY="YOUR_KEY"');
     console.error('   获取地址: https://www.binance.com/zh-CN/square/creator-center/home → 创建 API');
     process.exit(1);

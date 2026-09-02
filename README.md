@@ -1,95 +1,174 @@
-# lilibtc-bot
+# @castbot
 
-> 币安广场（Binance Square）自动发帖客户端发布器，配套 [Lilibtc Bot](https://lilibtc.com) 服务端使用。
+> **Castbot 币安广场自动发布工具** - 自动同步内容到 Binance Square，提升个人品牌影响力
 
-[![Node](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+## 🎯 功能特点
 
-## 这是什么
+- ✅ **自动发布** - 自动将内容发布到币安广场（Binance Square）
+- 🤖 **智能生成** - AI 驱动的内容生成系统
+- 📊 **数据分析** - 追踪浏览量、点赞、评论数据
+- 🎨 **模板系统** - 多种内容模板可选
+- 🔒 **安全可靠** - 本地运行，数据安全
+- 🚀 **简单易用** - 一键安装，命令行操作
 
-`lilibtc-bot` 是一个运行在**你自己电脑上**的命令行工具：它从 Lilibtc 服务端领取已生成/审核的内容，通过币安广场 OpenAPI 自动发布到你的币安广场账号，支持文本、图片与长文，并自带本地网页管理面板。
-
-## 为什么开源
-
-**这个发布器会接触你的币安 OpenAPI key——你有权审计每一行代码。**
-
-- 你的币安 key 和 Lilibtc API key **只存在你本机** `~/.lilibtc-bot/` 目录（权限 600），不上传任何服务器
-- 发布逻辑全在本机运行，你可以断网、停止、卸载，随时掌控
-- 本仓库代码即发布器实际运行的代码，无混淆、无遥测后门
-
-## 3 步上手
-
-### ① 领取 API key
-
-在 Telegram 打开 [@lilibtcbot](https://t.me/lilibtcbot)，按提示获取你的 API key（`bsq_` 或 `sk-` 开头）。
-
-### ② 安装
-
-**一键安装（推荐）**：
+## 📦 安装
 
 ```bash
-# macOS / Linux
-curl -sL https://api.lilibtc.com/install.sh | bash
+npm install -g @castbot
 ```
 
-```powershell
-# Windows —— 必须在 PowerShell 中运行（无需 WSL）
-irm https://api.lilibtc.com/install.ps1 | iex
-```
+**要求**：Node.js >= 18
 
-**或通过 npm**（大陆网络建议先切镜像加速：`npm config set registry https://registry.npmmirror.com`）：
+## 🚀 快速开始
+
+### 1. 登录
 
 ```bash
-npm install -g lilibtc-bot
+castbot login --key YOUR_BINANCE_COOKIE
 ```
 
-**备用**：本仓库的 [install.sh](install.sh)（npm 失败时回退 GitHub/server 源）。
-
-### ③ 登录 + 配置币安 key + 启动
+### 2. 启动发布器
 
 ```bash
-# 登录（key 来自 TG bot）
-lilibtc-bot login --key YOUR_API_KEY
-
-# 配置币安广场发帖 OpenAPI key（仅存本机）
-lilibtc-bot set-binance-key YOUR_BINANCE_KEY
-# 或: echo "YOUR_KEY" > ~/.lilibtc-bot/binance-api-key
-# 获取地址: https://www.binance.com/zh-CN/square/creator-center/home → 创建 API
-
-# 启动（同时会打开本地管理面板 http://127.0.0.1:8421）
-lilibtc-bot start
+castbot start
 ```
 
-后台运行用 `lilibtc-bot start --daemon`，停止用 `lilibtc-bot stop`。
+### 3. 查看状态
 
-## 系统要求
+```bash
+castbot status
+```
 
-- Node.js ≥ 18（Linux / macOS / Windows 均可；**Windows 需在 PowerShell 中运行**，无需 WSL）
-- 大陆网络：工具需要访问 binance.com 与 GitHub（更新源）。如有代理，配置方式：
-  ```bash
-  HTTPS_PROXY=http://127.0.0.1:7897 lilibtc-bot start
-  ```
-  或在本地面板设置里直接填代理地址（运行时热生效）。也可用 `lilibtc-bot setting proxy http://127.0.0.1:7897`。
+## 📖 详细使用
 
-## 常见问题
+### 命令列表
 
-**Q: 我的 key 存在哪里？**
-A: 全部在本机 `~/.lilibtc-bot/`（config.json、binance-api-key，权限 600）。服务端只保存你的账号绑定关系，不保存币安 key。
+```bash
+# 登录币安广场
+castbot login --key YOUR_KEY
 
-**Q: 怎么停止发帖？**
-A: `lilibtc-bot stop`（停止代理进程），或 `uninstall.sh` / `npm uninstall -g lilibtc-bot` 完全卸载。
+# 启动自动发布
+castbot start
 
-**Q: 怎么更新？**
-A: `lilibtc-bot update`（默认从 npm registry 拉取，大陆可设 `LILIBTC_NPM_REGISTRY=https://registry.npmmirror.com` 加速；有代理可 `update --github`），或直接 `npm update -g lilibtc-bot`。代理运行中更新会自动按原模式重启。
+# 查看发布状态
+castbot status
 
-**Q: 支持哪些内容格式？**
-A: 文本 + 图片（最多 4 张）+ 长文，内容由 Lilibtc 服务端生成并审核后下发。
+# 查看数据统计
+castbot stats
 
-## 更多
+# 查看版本
+castbot --version
+```
 
-- 完整功能与数据看板：[https://lilibtc.com](https://lilibtc.com)
-- 直接开聊 / 领 key：[@lilibtcbot](https://t.me/lilibtcbot)
+### 配置文件
 
-## License
+配置文件位于：`~/.square-agent/config.json`
 
-[MIT](LICENSE)
+```json
+{
+  "frequency": 100,
+  "style": "balanced",
+  "contentTypes": "short",
+  "enabledTemplates": [
+    "☀️ 每日早报",
+    "🌙 晚间复盘",
+    "📈 盘面分析"
+  ]
+}
+```
+
+## 🔧 配置说明
+
+### 频率设置（frequency）
+- `100` - 正常频率
+- `200` - 高频模式
+- `50` - 低频模式
+
+### 内容风格（style）
+- `conservative` - 保守风格
+- `balanced` - 平衡风格
+- `aggressive` - 激进风格
+
+### 内容长度（contentTypes）
+- `short` - 短内容（< 200字）
+- `medium` - 中等长度（200-500字）
+- `long` - 长内容（> 500字）
+
+## 📊 数据追踪
+
+工具会自动追踪以下数据：
+
+- 每日发帖数
+- 总浏览量
+- 总点赞数
+- 总评论数
+- 粉丝增长
+
+数据保存在：`~/.square-agent/square-agent.db`
+
+## 🛠️ 故障排除
+
+### 问题：无法发布到币安广场
+
+**解决方案**：
+1. 检查网络连接
+2. 确认币安 Cookie 是否过期
+3. 重新运行 `castbot login --key YOUR_KEY`
+
+### 问题：数据库错误
+
+**解决方案**：
+```bash
+# 重置数据库
+rm ~/.square-agent/square-agent.db
+castbot start
+```
+
+### 问题：权限错误
+
+**解决方案**：
+```bash
+# 检查币安广场发布权限
+# 确保账号没有被限制发布
+```
+
+## 🔐 安全说明
+
+- 所有数据存储在本地
+- 不会上传任何内容到第三方服务器
+- 币安 Cookie 仅用于与币安 API 通信
+- 建议定期更新 Cookie
+
+## 🌟 关于 Castbot
+
+### 联系方式
+
+- **币安广场**：[@castbot](https://www.binance.com/zh/square)
+- **官网**：[castbot.io](https://castbot.io)
+- **Telegram Bot**：[@castbotbot](https://t.me/castbotbot)
+
+### 服务
+
+本工具由 Castbot 团队开发和维护，专注于币安生态内容创作和分发。
+
+## 📝 开源
+
+本项目在 GitHub 上开源：
+
+**开发仓库**：[franklili3/square-agent](https://github.com/franklili3/square-agent)
+
+欢迎贡献代码、报告问题或提出建议！
+
+## 📄 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+## 🙏 鸣谢
+
+感谢所有使用本工具的用户和贡献者！
+
+---
+
+**Made with ❤️ by Castbot Team**
+
+*如有问题，请通过 [GitHub Issues](https://github.com/franklili3/square-agent/issues) 联系我们*

@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 /**
- * Lilibtc Bot CLI - 币安广场自动发布代理  (v1.0.8)
+ * Castbot Bot CLI - 币安广场自动发布代理  (v1.0.8)
  *
  * 用法:
- *   lilibtc-bot login --key bsq_xxx      # 绑定 API Key（sk-xxxxx 或 bsq_xxxxx）
- *   lilibtc-bot set-binance-key <key>    # 设置币安广场发帖 OpenAPI Key（仅本地）
- *   lilibtc-bot start                    # 启动代理（前台，继承当前 shell env）
+ *   castbot login --key bsq_xxx      # 绑定 API Key（sk-xxxxx 或 bsq_xxxxx）
+ *   castbot set-binance-key <key>    # 设置币安广场发帖 OpenAPI Key（仅本地）
+ *   castbot start                    # 启动代理（前台，继承当前 shell env）
  *   HTTPS_PROXY=http://127.0.0.1:1081 \
- *     lilibtc-bot start --daemon         # 后台运行（必须显式带 HTTPS_PROXY，
+ *     castbot start --daemon         # 后台运行（必须显式带 HTTPS_PROXY，
  *                                          # daemon 不读 ~/.bashrc）
- *   lilibtc-bot status                   # 查看状态
- *   lilibtc-bot stop                     # 停止后台代理
- *   lilibtc-bot update                   # 自更新：主源 api.lilibtc.com，不可达时
+ *   castbot status                   # 查看状态
+ *   castbot stop                     # 停止后台代理
+ *   castbot update                   # 自更新：主源 api.castbot.io，不可达时
  *                                          # 自动回退 npm；--npm 强制走 npm。
  *                                          # 更新后按原启动模式重启 daemon
- *   lilibtc-bot history [n]              # 查看最近 n 条执行记录（默认20）
- *   lilibtc-bot states                   # 查看任务执行统计
- *   lilibtc-bot setting [key] [value]    # 查看/修改配置
- *   lilibtc-bot analytics <sub>          # 运行数据分析
+ *   castbot history [n]              # 查看最近 n 条执行记录（默认20）
+ *   castbot states                   # 查看任务执行统计
+ *   castbot setting [key] [value]    # 查看/修改配置
+ *   castbot analytics <sub>          # 运行数据分析
  */
 
 import { execSync, spawn } from 'child_process';
@@ -51,13 +51,13 @@ if (_PROXY_URL) {
 const CLI_FILE = fileURLToPath(import.meta.url);
 const PKG_DIR = dirname(CLI_FILE);
 // 兜底：若 import.meta.url 解析失败（极少见），退回历史路径并使用实际包名。
-const FALLBACK_PKG_DIR = join(homedir(), '.nvm/versions/node/v22.21.1/lib/node_modules/lilibtc-bot');
+const FALLBACK_PKG_DIR = join(homedir(), '.nvm/versions/node/v22.21.1/lib/node_modules/castbot');
 const AGENT_DIR = existsSync(join(PKG_DIR, 'agent.mjs')) ? PKG_DIR : FALLBACK_PKG_DIR;
 
 // 用户数据目录：与 npm 包目录分离。npm 重装只换 AGENT_DIR 下的 cli.mjs / agent.mjs，
-// config / pid / logs 留在 ~/.lilibtc-bot/ 下不丢。
+// config / pid / logs 留在 ~/.castbot/ 下不丢。
 // binance-api-key / lockfile / daemon.json 一直就在这里。
-const USER_DATA_DIR = join(homedir(), '.lilibtc-bot');
+const USER_DATA_DIR = join(homedir(), '.castbot');
 const CONFIG_FILE = join(USER_DATA_DIR, 'config.json');
 const PID_FILE = join(USER_DATA_DIR, 'agent.pid');
 const LOG_DIR = join(USER_DATA_DIR, 'publisher', 'logs');
@@ -82,21 +82,21 @@ if (!existsSync(CONFIG_FILE)) {
     } catch {}
   }
 }
-const LOCK_FILE = join(homedir(), '.lilibtc-bot', 'publisher.lock');
+const LOCK_FILE = join(homedir(), '.castbot', 'publisher.lock');
 // 币安广场 OpenAPI Key 本地存储。与 agent.mjs getApiKey() 读取路径必须保持一致。
-const BINANCE_KEY_FILE = join(homedir(), '.lilibtc-bot', 'binance-api-key');
+const BINANCE_KEY_FILE = join(homedir(), '.castbot', 'binance-api-key');
 
 // daemon 状态文件：cmdStart 写入，cmdStop 清理，cmdUpdate 读取以决定重启模式。
-const DAEMON_DIR = join(homedir(), '.lilibtc-bot', 'publisher');
+const DAEMON_DIR = join(homedir(), '.castbot', 'publisher');
 const DAEMON_FILE = join(DAEMON_DIR, 'daemon.json');
 
 // 本地网页管理面板：cmdStart 时同时 spawn web-server.mjs（独立进程）。
 // web-token：32 字节随机，URL ?token=xxx 自动登录；权限 600 防本机其他用户偷读
 // web-server.pid：web 子进程 PID，cmdStop 联动清理
 // web-port：实际监听端口（默认 8421，冲突时 +1 试探），status/help 提示用户
-const WEB_TOKEN_FILE = join(homedir(), '.lilibtc-bot', 'web-token');
-const WEB_PID_FILE = join(homedir(), '.lilibtc-bot', 'web-server.pid');
-const WEB_PORT_FILE = join(homedir(), '.lilibtc-bot', 'web-port');
+const WEB_TOKEN_FILE = join(homedir(), '.castbot', 'web-token');
+const WEB_PID_FILE = join(homedir(), '.castbot', 'web-server.pid');
+const WEB_PORT_FILE = join(homedir(), '.castbot', 'web-port');
 const WEB_SERVER_FILE = join(AGENT_DIR, 'web-server.mjs');
 const WEB_PORT_DEFAULT = 8421;
 const WEB_PORT_MAX = 8430;
@@ -104,16 +104,16 @@ const WEB_PORT_MAX = 8430;
 // 自更新（v1.0.25+）：主源 npm registry（中国大陆可达性最好，可配 npmmirror 镜像），
 // 回退源 GitHub Releases（需代理，--github 强制）。
 // 旧 server 通道（version.json + 逐文件）保留给存量排障：设
-// LILIBTC_UPDATE_BASE=https://api.lilibtc.com/cli 即切回 server 通道。
-const GITHUB_REPO = 'franklili3/lilibtc-bot';
+// CASTBOT_UPDATE_BASE=https://api.castbot.io/cli 即切回 server 通道。
+const GITHUB_REPO = 'franklili3/castbot';
 const GITHUB_RELEASE_API = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
-const UPDATE_BASE = process.env.LILIBTC_UPDATE_BASE || '';
+const UPDATE_BASE = process.env.CASTBOT_UPDATE_BASE || '';
 // npm 回退更新源：主源不可达（如 GitHub 访问受限）时自动切换，
-// 默认走 npm；`update --github` 强制走 GitHub（有代理用户）。国内建议 LILIBTC_NPM_REGISTRY=https://registry.npmmirror.com 加速。
+// 默认走 npm；`update --github` 强制走 GitHub（有代理用户）。国内建议 CASTBOT_NPM_REGISTRY=https://registry.npmmirror.com 加速。
 // npm tarball 随包分发全部运行文件（含 humanize.mjs / process-detector.mjs）。
-const NPM_PACKAGE = 'lilibtc-bot';
-const NPM_REGISTRY = (process.env.LILIBTC_NPM_REGISTRY || 'https://registry.npmjs.org').replace(/\/+$/, '');
-const CLI_VERSION = '1.0.25';
+const NPM_PACKAGE = 'castbot';
+const NPM_REGISTRY = (process.env.CASTBOT_NPM_REGISTRY || 'https://registry.npmjs.org').replace(/\/+$/, '');
+const CLI_VERSION = '1.1.0';
 
 const argv = process.argv.slice(2);
 const command = argv[0] || 'help';
@@ -152,7 +152,7 @@ function isRunning(pid) {
 }
 
 /**
- * 判断 lockfile 中的 PID 是否真的是另一个 lilibtc-bot（或旧名 cryptoqclaw/square-agent）实例。
+ * 判断 lockfile 中的 PID 是否真的是另一个 castbot（或旧名 cryptoqclaw/square-agent）实例。
  * 单纯 process.kill(pid,0) 只能确认 PID 存活，但 OS 回收 PID 后会复用给无关进程，
  * 导致 lockfile 误判为「另一实例正在运行」。
  * 使用跨平台进程检测验证是否是 agent.mjs 进程。
@@ -197,7 +197,7 @@ function ts() {
 
 async function httpRequest(method, urlPath, body) {
   const config = getConfig();
-  const baseUrl = ((process.env.LILIBTC_SERVER_URL || process.env.SQUARE_SERVER_URL) || config?.serverUrl || 'https://api.lilibtc.com').replace(/\/$/, '');
+  const baseUrl = ((process.env.CASTBOT_SERVER_URL || process.env.SQUARE_SERVER_URL) || config?.serverUrl || 'https://api.castbot.io').replace(/\/$/, '');
   const url = new URL(urlPath, baseUrl).toString();
   const postData = body ? JSON.stringify(body) : null;
   const headers = { 'Authorization': `Bearer ${config?.apiKey || ''}` };
@@ -468,7 +468,7 @@ function openBrowser(url) {
  */
 async function spawnWebServer() {
   if (!existsSync(WEB_SERVER_FILE)) {
-    return { ok: false, error: `web-server.mjs 未安装。请再运行一次 \`lilibtc-bot update\` 以获取网页面板资源（从 1.0.16 升级到 1.0.17 需跑两次 update）` };
+    return { ok: false, error: `web-server.mjs 未安装。请再运行一次 \`castbot update\` 以获取网页面板资源（从 1.0.16 升级到 1.0.17 需跑两次 update）` };
   }
 
   // 复用已有 token（避免每次重启 URL 变），无则生成新的
@@ -539,7 +539,7 @@ async function cmdLogin() {
   const apiKey = keyArg ? keyArg.split('=')[1] : (keyIdx >= 0 ? cmdArgs[keyIdx + 1] : null);
 
   if (!apiKey) {
-    console.error('❌ 用法: lilibtc-bot login --key <sk-xxxxx 或 bsq_xxxxx>');
+    console.error('❌ 用法: castbot login --key <sk-xxxxx 或 bsq_xxxxx>');
     process.exit(1);
   }
 
@@ -558,7 +558,7 @@ async function cmdLogin() {
 
   const data = JSON.parse(result.data);
   // 公网默认 https；server 返回的 server_url 可能是 http://hostname:5577（旧版兼容字段），不可信
-  const finalServerUrl = (process.env.LILIBTC_SERVER_URL || process.env.SQUARE_SERVER_URL) || 'https://api.lilibtc.com';
+  const finalServerUrl = (process.env.CASTBOT_SERVER_URL || process.env.SQUARE_SERVER_URL) || 'https://api.castbot.io';
   saveConfig({
     apiKey,
     userId: data.user_id,
@@ -571,12 +571,12 @@ async function cmdLogin() {
   console.log(`   用户: ${data.user_id}`);
   console.log(`   套餐: ${data.plan}`);
   console.log(`   服务器: ${finalServerUrl}`);
-  console.log('\n运行 `lilibtc-bot start` 开始。');
+  console.log('\n运行 `castbot start` 开始。');
 }
 
 /**
  * 设置币安广场 OpenAPI Key（发帖用，仅本地存储）。
- * 写入 ~/.lilibtc-bot/binance-api-key，权限 600。
+ * 写入 ~/.castbot/binance-api-key，权限 600。
  * publisher agent.mjs getApiKey() 读取同一路径。
  *
  * 与 `login --key` 区别：login 是 :3100 server 的 bot API key（认证用）；
@@ -593,7 +593,7 @@ async function cmdSetBinanceKey() {
   if (cmdArgs.includes('--show')) {
     if (!existsSync(BINANCE_KEY_FILE)) {
       console.log('⚪ 尚未设置币安广场 OpenAPI Key。');
-      console.log('   运行: lilibtc-bot set-binance-key <key>');
+      console.log('   运行: castbot set-binance-key <key>');
       return;
     }
     const v = readFileSync(BINANCE_KEY_FILE, 'utf8').trim();
@@ -626,8 +626,8 @@ async function cmdSetBinanceKey() {
        : cmdArgs.find(a => !a.startsWith('--')));
 
   if (!key) {
-    console.error('❌ 用法: lilibtc-bot set-binance-key <key>');
-    console.error('   或:   lilibtc-bot set-binance-key --key <key>');
+    console.error('❌ 用法: castbot set-binance-key <key>');
+    console.error('   或:   castbot set-binance-key --key <key>');
     console.error('');
     console.error('选项:');
     console.error('   --show    显示当前 key 的打码版本');
@@ -654,7 +654,7 @@ async function cmdSetBinanceKey() {
   }
 
   // 写入：确保目录存在 + 权限 600
-  const dir = join(homedir(), '.lilibtc-bot');
+  const dir = join(homedir(), '.castbot');
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(BINANCE_KEY_FILE, key + '\n');
   try { chmodSync(BINANCE_KEY_FILE, 0o600); } catch {} // Windows 上无效，忽略
@@ -663,21 +663,21 @@ async function cmdSetBinanceKey() {
   console.log(`   ${maskKey(key)}`);
   console.log(`   路径: ${BINANCE_KEY_FILE} (权限 600)`);
   console.log('');
-  console.log('   运行 `lilibtc-bot start` 后，publisher 会自动读取该 key 发帖。');
+  console.log('   运行 `castbot start` 后，publisher 会自动读取该 key 发帖。');
 }
 
 async function cmdStart() {
   const config = getConfig();
   if (!config?.apiKey) {
-    console.error('❌ 尚未登录。请先运行: lilibtc-bot login --key <sk-xxxxx 或 bsq_xxxxx>');
+    console.error('❌ 尚未登录。请先运行: castbot login --key <sk-xxxxx 或 bsq_xxxxx>');
     process.exit(1);
   }
 
   // 注意：cmdLogin 把 token 存为 config.apiKey（与 server verify/register 共用同一个
   // bsq_xxx token），不是 agentToken。这里回退到 config.apiKey 才能取到登录态。
-  const agentToken = process.env.LILIBTC_BOT_TOKEN || process.env.CRYPTOQCLAW_AGENT_TOKEN || process.env.AGENT_TOKEN || config?.agentToken || config?.apiKey;
+  const agentToken = process.env.CASTBOT_API_KEY || process.env.CRYPTOQCLAW_AGENT_TOKEN || process.env.AGENT_TOKEN || config?.agentToken || config?.apiKey;
   if (!agentToken) {
-    console.error('❌ 请先运行: lilibtc-bot login --key <sk-xxxxx 或 bsq_xxxxx>');
+    console.error('❌ 请先运行: castbot login --key <sk-xxxxx 或 bsq_xxxxx>');
     process.exit(1);
   }
 
@@ -701,7 +701,7 @@ async function cmdStart() {
   const agentEnv = {
     ...process.env,
     AGENT_TOKEN: agentToken,
-    SERVER_URL: process.env.SERVER_URL || config?.serverUrl || 'https://api.lilibtc.com',
+    SERVER_URL: process.env.SERVER_URL || config?.serverUrl || 'https://api.castbot.io',
     API_KEY: process.env.API_KEY || config?.apiKey || '',
   };
   // 代理：config.proxy 优先于 shell env。
@@ -731,12 +731,12 @@ async function cmdStart() {
       args: process.argv.slice(2)
     });
     console.log(`✅ 代理已在后台启动 (PID ${child.pid})`);
-    console.log('   使用 `lilibtc-bot stop` 停止');
-    console.log('   使用 `lilibtc-bot status` 查看状态');
+    console.log('   使用 `castbot stop` 停止');
+    console.log('   使用 `castbot status` 查看状态');
     return;
   }
 
-  console.log('🤖 Lilibtc Bot 启动中...');
+  console.log('🤖 Castbot Bot 启动中...');
   console.log(`   用户: ${config.userId}`);
   console.log(`   服务器: ${config.serverUrl}`);
   console.log('   按 Ctrl+C 停止');
@@ -745,7 +745,7 @@ async function cmdStart() {
   // 启动 agent.mjs 前先清理过期 lockfile，避免残留导致误报「另一实例正在运行」
   const lockState = await cleanupStaleLock();
   if (lockState.blocked) {
-    console.error(`❌ 另一实例正在运行 (PID ${lockState.pid})，请先运行: lilibtc-bot stop`);
+    console.error(`❌ 另一实例正在运行 (PID ${lockState.pid})，请先运行: castbot stop`);
     process.exit(1);
   }
 
@@ -776,11 +776,11 @@ async function cmdStart() {
 async function cmdStatus() {
   const config = getConfig();
 
-  console.log('📊 Lilibtc Bot 状态');
+  console.log('📊 Castbot Bot 状态');
   console.log('─'.repeat(30));
 
   if (!config) {
-    console.log('  ⚪ 未配置。请先运行: lilibtc-bot login --key <sk-xxxxx 或 bsq_xxxxx>');
+    console.log('  ⚪ 未配置。请先运行: castbot login --key <sk-xxxxx 或 bsq_xxxxx>');
   } else {
     console.log(`  用户:    ${config.userId || '-'}`);
     console.log(`  套餐:    ${config.plan || '-'}`);
@@ -800,7 +800,7 @@ async function cmdStatus() {
   if (web.running) {
     console.log(`  网页:   🌐 运行中 (PID ${web.pid}, 端口 ${web.port})`);
     // token URL 太长，只打印一次（首次 start 时已打印过；这里仅在 status 里给端口提示）
-    console.log(`          http://127.0.0.1:${web.port}/?token=***（token 在 ~/.lilibtc-bot/web-token）`);
+    console.log(`          http://127.0.0.1:${web.port}/?token=***（token 在 ~/.castbot/web-token）`);
   } else {
     console.log('  网页:   ⚪ 未运行（启动代理时自动开启）');
   }
@@ -850,7 +850,7 @@ async function cmdStop() {
     try { unlinkSync(PID_FILE); } catch {}
   } else {
     try {
-      const pids = execSync('pgrep -f "(lilibtc-bot|cryptoqclaw|square-agent).*agent.mjs"', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+      const pids = execSync('pgrep -f "(castbot|cryptoqclaw|square-agent).*agent.mjs"', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
       pids.forEach(p => { try { process.kill(parseInt(p), 'SIGTERM'); } catch {} });
       console.log(`✅ 代理已停止 (PID: ${pids.join(', ')})`);
       stopped = pids.length > 0;
@@ -972,7 +972,7 @@ async function cmdSetting() {
   const config = getConfig();
 
   if (!config) {
-    console.log('⚠️ 未找到配置。请先运行: lilibtc-bot login --key <sk-xxxxx 或 bsq_xxxxx>');
+    console.log('⚠️ 未找到配置。请先运行: castbot login --key <sk-xxxxx 或 bsq_xxxxx>');
     return;
   }
 
@@ -1035,15 +1035,15 @@ async function cmdAnalytics() {
 }
 
 /**
- * lilibtc-bot update —— 自更新（1.0.24+ 三源）。
+ * castbot update —— 自更新（1.0.24+ 三源）。
  *
  * 更新源（sourceMode）:
  *   npm:   GET {NPM_REGISTRY}/{NPM_PACKAGE}/latest —— 主源（v1.0.25+，大陆可达性最好），
  *          tarball 解包一次性更新全部运行文件；--npm 仍被接受（即默认）
  *   github: GET api.github.com .../releases/latest —— 回退源（需代理），--github 强制；
- *          下载 release 资产 lilibtc-bot-v{VERSION}.tgz 解包更新
+ *          下载 release 资产 castbot-v{VERSION}.tgz 解包更新
  *   api:   GET {UPDATE_BASE}/version.json —— 存量排障通道，仅在设了
- *          LILIBTC_UPDATE_BASE 时启用；逐文件下载（cli/agent/web-server/web/index.html）
+ *          CASTBOT_UPDATE_BASE 时启用；逐文件下载（cli/agent/web-server/web/index.html）
  *
  * 流程:
  *   1. 拉远端版本（主源失败→npm 回退），比对 semver
@@ -1064,7 +1064,7 @@ async function cmdUpdate() {
   const localVersion = CLI_VERSION;
   const thisFile = process.argv[1]; // 当前 cli.mjs 绝对路径（npm 全局软链解引用后）
 
-  // 源优先级（v1.0.25+，中国大陆优先）：npm(默认) > --github 显式 > LILIBTC_UPDATE_BASE(api, 存量排障)
+  // 源优先级（v1.0.25+，中国大陆优先）：npm(默认) > --github 显式 > CASTBOT_UPDATE_BASE(api, 存量排障)
   let sourceMode = forceGithub ? 'github' : (UPDATE_BASE ? 'api' : 'npm');
   const sourceLabel = sourceMode === 'npm' ? `${NPM_REGISTRY} (${NPM_PACKAGE})`
     : sourceMode === 'api' ? `${UPDATE_BASE}（server 通道）`
@@ -1081,7 +1081,7 @@ async function cmdUpdate() {
   if (sourceMode === 'github') {
     const gRes = await fetchText(GITHUB_RELEASE_API, {
       timeoutMs: 10000,
-      headers: { 'User-Agent': 'lilibtc-bot', 'Accept': 'application/vnd.github+json' },
+      headers: { 'User-Agent': 'castbot', 'Accept': 'application/vnd.github+json' },
     });
     if (gRes.ok) {
       let rel;
@@ -1096,9 +1096,9 @@ async function cmdUpdate() {
         console.error('❌ Release 缺少 tag_name 字段');
         process.exit(1);
       }
-      const asset = (rel.assets || []).find(a => a.name === `lilibtc-bot-v${version}.tgz`);
+      const asset = (rel.assets || []).find(a => a.name === `castbot-v${version}.tgz`);
       if (!asset?.browser_download_url) {
-        console.error(`❌ Release 缺少资产 lilibtc-bot-v${version}.tgz`);
+        console.error(`❌ Release 缺少资产 castbot-v${version}.tgz`);
         process.exit(1);
       }
       remoteInfo = { version, changelog: rel.body || `GitHub Release ${rel.tag_name}` };
@@ -1130,8 +1130,8 @@ async function cmdUpdate() {
     const nRes = await fetchText(`${NPM_REGISTRY}/${NPM_PACKAGE}/latest`, { timeoutMs: 15000 });
     if (!nRes.ok) {
       console.error(`❌ npm 源不可达: ${nRes.error || `HTTP ${nRes.status}`}`);
-      console.error('   排查: 大陆网络建议 LILIBTC_NPM_REGISTRY=https://registry.npmmirror.com；');
-      console.error('        有代理可改用 lilibtc-bot update --github 走 GitHub Releases。');
+      console.error('   排查: 大陆网络建议 CASTBOT_NPM_REGISTRY=https://registry.npmmirror.com；');
+      console.error('        有代理可改用 castbot update --github 走 GitHub Releases。');
       process.exit(1);
     }
     let npmMeta;
@@ -1318,15 +1318,15 @@ async function cmdUpdate() {
     console.log(`✅ 已重启 (PID ${child.pid})`);
   } else {
     console.log('⚠️  原本是前台模式运行，无法自动 fork。');
-    console.log('   请手动执行: lilibtc-bot start');
+    console.log('   请手动执行: castbot start');
   }
 }
 
 function cmdHelp() {
   console.log(`
-Lilibtc Bot - 币安广场自动发布代理
+Castbot Bot - 币安广场自动发布代理
 
-用法: lilibtc-bot <命令> [选项]
+用法: castbot <命令> [选项]
 
 命令:
   login --key <密钥>   使用 API Key 登录 (sk-xxxxx 或 bsq_xxxxx)
@@ -1340,17 +1340,17 @@ Lilibtc Bot - 币安广场自动发布代理
                        可在浏览器中完成登录、设币安 Key、查状态、查日志、启停代理。
                        面板 URL 形如 http://127.0.0.1:8421/?token=xxx，仅本机可访问。
                        ⚠ 后台模式不会自动加载 shell 的代理设置，必须显式带 HTTPS_PROXY：
-                         Linux / macOS:  HTTPS_PROXY=http://127.0.0.1:1081 lilibtc-bot start --daemon
-                         Windows PS:     $env:HTTPS_PROXY="http://127.0.0.1:7897"; lilibtc-bot start --daemon
-                         Windows CMD:    set HTTPS_PROXY=http://127.0.0.1:7897 && lilibtc-bot start --daemon
+                         Linux / macOS:  HTTPS_PROXY=http://127.0.0.1:1081 castbot start --daemon
+                         Windows PS:     $env:HTTPS_PROXY="http://127.0.0.1:7897"; castbot start --daemon
+                         Windows CMD:    set HTTPS_PROXY=http://127.0.0.1:7897 && castbot start --daemon
                        （端口换成你自己代理的端口；前台模式继承当前 shell env，无需重复设置）
                        ⚠ Windows PowerShell/CMD 不支持 "VAR=value cmd" 前缀语法，
                        照搬 Linux 写法会报「无法识别为 cmdlet」错误。
   stop                 停止后台代理
   status               查看代理状态、依赖、最近日志
-  update               自更新到最新版本（主源 npm，国内建议 LILIBTC_NPM_REGISTRY=
+  update               自更新到最新版本（主源 npm，国内建议 CASTBOT_NPM_REGISTRY=
                        https://registry.npmmirror.com 加速；--github 走 GitHub Releases（需代理）；
-                       排障可设 LILIBTC_UPDATE_BASE 切回 server 通道），
+                       排障可设 CASTBOT_UPDATE_BASE 切回 server 通道），
                        按 daemon.json 记录的原启动模式重启代理
   setting [key] [val]  查看/修改配置
   history [n]          查看最近 n 条执行记录（默认20）
@@ -1370,7 +1370,7 @@ Lilibtc Bot - 币安广场自动发布代理
 // ========== 入口 ==========
 
 function cmdVersion() {
-  console.log(`lilibtc-bot v${CLI_VERSION}`);
+  console.log(`castbot v${CLI_VERSION}`);
 }
 
 switch (command) {

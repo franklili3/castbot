@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Lilibtc Bot 本地网页管理面板 - HTTP 服务入口
+ * Castbot Bot 本地网页管理面板 - HTTP 服务入口
  *
  * 由 cli.mjs cmdStart 以独立子进程 spawn（detached + unref）。
  * - 绑 127.0.0.1，绝不出公网
@@ -27,7 +27,7 @@ const PKG_DIR = __dirname;
 const AGENT_FILE = join(PKG_DIR, 'agent.mjs');
 
 // 用户数据目录（与 cli.mjs 完全一致，避免漂移）
-const USER_DATA_DIR = join(homedir(), '.lilibtc-bot');
+const USER_DATA_DIR = join(homedir(), '.castbot');
 const CONFIG_FILE = join(USER_DATA_DIR, 'config.json');
 const PID_FILE = join(USER_DATA_DIR, 'agent.pid');
 const BINANCE_KEY_FILE = join(USER_DATA_DIR, 'binance-api-key');
@@ -146,7 +146,7 @@ async function handleLogin(req, res) {
   }
 
   // 复用 cli.mjs cmdLogin 的 verify 链路
-  const baseUrl = (process.env.LILIBTC_SERVER_URL || process.env.SQUARE_SERVER_URL || getConfig()?.serverUrl || 'https://api.lilibtc.com').replace(/\/$/, '');
+  const baseUrl = (process.env.CASTBOT_SERVER_URL || process.env.SQUARE_SERVER_URL || getConfig()?.serverUrl || 'https://api.castbot.io').replace(/\/$/, '');
   const verifyUrl = `${baseUrl}/api/agent/verify?key=${encodeURIComponent(apiKey)}`;
 
   const result = await new Promise(resolve => {
@@ -172,7 +172,7 @@ async function handleLogin(req, res) {
   }
 
   const data = result.data;
-  const finalServerUrl = (process.env.LILIBTC_SERVER_URL || process.env.SQUARE_SERVER_URL) || baseUrl;
+  const finalServerUrl = (process.env.CASTBOT_SERVER_URL || process.env.SQUARE_SERVER_URL) || baseUrl;
   saveConfig({
     apiKey,
     userId: data.user_id,
@@ -232,11 +232,11 @@ async function handleStart(req, res) {
   }
 
   // 复用 cli.mjs cmdStart daemon 分支：spawn agent.mjs detached
-  const token = process.env.LILIBTC_BOT_TOKEN || process.env.CRYPTOQCLAW_AGENT_TOKEN || process.env.AGENT_TOKEN || config.agentToken || config.apiKey;
+  const token = process.env.CASTBOT_BOT_TOKEN || process.env.CRYPTOQCLAW_AGENT_TOKEN || process.env.AGENT_TOKEN || config.agentToken || config.apiKey;
   const env = {
     ...process.env,
     AGENT_TOKEN: token,
-    SERVER_URL: process.env.SERVER_URL || config.serverUrl || 'https://api.lilibtc.com',
+    SERVER_URL: process.env.SERVER_URL || config.serverUrl || 'https://api.castbot.io',
     API_KEY: process.env.API_KEY || config.apiKey || '',
   };
   // 代理：config.proxy 覆盖 process.env（网页设置的优先于 shell env）
@@ -272,7 +272,7 @@ async function handleStop(req, res) {
   } else {
     // 兜底：扫一遍进程列表
     try {
-      const pids = execSync('pgrep -f "(lilibtc-bot|cryptoqclaw|square-agent).*agent.mjs"', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+      const pids = execSync('pgrep -f "(castbot|cryptoqclaw|square-agent).*agent.mjs"', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
       pids.forEach(p => { try { process.kill(parseInt(p), 'SIGTERM'); } catch {} });
       stopped = pids.length > 0;
     } catch {}

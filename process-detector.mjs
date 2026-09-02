@@ -88,7 +88,7 @@ class ProcessDetector {
   }
 
   /**
-   * 检查 lockfile 中的 PID 是否真的是另一个 lilibtc-bot 实例
+   * 检查 lockfile 中的 PID 是否真的是另一个 castbot 实例
    * 返回: 'alive-agent' | 'alive-other' | 'dead' | 'unknown'
    */
   static async checkLockOwner(pid) {
